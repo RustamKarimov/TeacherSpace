@@ -86,6 +86,17 @@ export function createOptionsTableBlock(): TableBlock {
     [createTableCell("D", true), createTableCell(""), createTableCell("")]
   ];
 
+  rows.forEach((row, rowIndex) => {
+    row.forEach((cell) => {
+      cell.borders = {
+        top: rowIndex === 0,
+        right: true,
+        bottom: rowIndex === 0 || rowIndex === rows.length - 1,
+        left: true
+      };
+    });
+  });
+
   return {
     id: nanoid(),
     type: "table",

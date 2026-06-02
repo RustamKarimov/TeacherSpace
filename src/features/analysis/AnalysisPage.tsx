@@ -1,5 +1,6 @@
 import { BarChart3, CheckCircle2, ClipboardCheck, Plus, Save, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { teacherDeskApi } from "../../lib/rendererApi";
 import type { AnalysisOverview, AnalysisStudentRecord, AnalysisStudentSavePayload, AppSettings } from "../../types";
 
@@ -234,7 +235,7 @@ function StudentsPanel({
 }
 
 function McqEntryPanel({ students }: { students: AnalysisStudentRecord[] }) {
-  const questions = Array.from({ length: 12 }, (_, index) => `Q${index + 1}`);
+  const questions = Array.from({ length: 40 }, (_, index) => `Q${index + 1}`);
   return (
     <section className="analysis-panel analysis-entry-panel">
       <EntryHeader copy="Capture A/B/C/D answers against a generated MCQ variant. Auto-marking will use the saved variant answer key snapshot." />
@@ -272,6 +273,31 @@ function ResultGrid({ students, columns, mode }: { students: AnalysisStudentReco
     { id: "placeholder-2", firstName: "Student", surname: "Two", schoolId: "S002", academicYear: "", grade: "12", className: "A", status: "Active", notes: "", createdAt: "", updatedAt: "" }
   ] satisfies AnalysisStudentRecord[];
 
+  function focusCell(rowIndex: number, columnIndex: number) {
+    const input = document.querySelector<HTMLInputElement>(`[data-analysis-cell="${rowIndex}:${columnIndex}"]`);
+    input?.focus();
+    input?.select();
+  }
+
+  function handleMcqCellKeyDown(event: KeyboardEvent<HTMLInputElement>, rowIndex: number, columnIndex: number) {
+    if (event.key === "ArrowRight" || event.key === "Tab" || event.key === "Enter") {
+      event.preventDefault();
+      focusCell(rowIndex, Math.min(columns.length - 1, columnIndex + 1));
+    }
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      focusCell(rowIndex, Math.max(0, columnIndex - 1));
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      focusCell(Math.min(visibleStudents.length - 1, rowIndex + 1), columnIndex);
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      focusCell(Math.max(0, rowIndex - 1), columnIndex);
+    }
+  }
+
   return (
     <div className="analysis-result-grid-wrap">
       <table className="analysis-result-grid">
@@ -284,12 +310,27 @@ function ResultGrid({ students, columns, mode }: { students: AnalysisStudentReco
           </tr>
         </thead>
         <tbody>
-          {visibleStudents.map((student) => (
+          {visibleStudents.map((student, rowIndex) => (
             <tr key={student.id}>
               <td><strong>{student.firstName} {student.surname}</strong><small>{student.schoolId}</small></td>
               {columns.map((column, index) => (
                 <td key={column}>
-                  {mode === "mcq" ? <select defaultValue={index % 5 === 0 ? "" : ["A", "B", "C", "D"][index % 4]}><option value="" /><option>A</option><option>B</option><option>C</option><option>D</option></select> : <input type="number" min={0} defaultValue={index % 3 === 0 ? "" : Math.min(6, index + 1)} />}
+                  {mode === "mcq" ? (
+                    <input
+                      aria-label={`${student.firstName} ${student.surname} ${column}`}
+                      className="analysis-mcq-answer-cell"
+                      data-analysis-cell={`${rowIndex}:${index}`}
+                      inputMode="text"
+                      maxLength={1}
+                      onChange={(event) => {
+                        const value = event.target.value.toUpperCase().replace(/[^ABCD]/g, "");
+                        event.target.value = value;
+                        if (value && index < columns.length - 1) focusCell(rowIndex, index + 1);
+                      }}
+                      onFocus={(event) => event.currentTarget.select()}
+                      onKeyDown={(event) => handleMcqCellKeyDown(event, rowIndex, index)}
+                    />
+                  ) : <input type="number" min={0} defaultValue={index % 3 === 0 ? "" : Math.min(6, index + 1)} />}
                 </td>
               ))}
               <td>--</td>

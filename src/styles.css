@@ -2123,6 +2123,11 @@ button {
 .mcq-option-preview-row p {
   min-width: 0;
   margin: 0;
+  display: block;
+  line-height: 1.45;
+}
+
+.mcq-option-preview-row.has-image > p {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -5936,6 +5941,8 @@ button {
 
 .analysis-result-grid th,
 .analysis-result-grid td {
+  min-width: 44px;
+  padding: 5px 6px;
   text-align: center;
   white-space: nowrap;
 }
@@ -5960,6 +5967,22 @@ button {
   min-height: 26px;
   padding: 0 4px;
   text-align: center;
+}
+
+.analysis-result-grid .analysis-mcq-answer-cell {
+  width: 34px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.analysis-result-grid .analysis-mcq-answer-cell:focus {
+  border-color: #0d6eea;
+  outline: 2px solid rgba(13, 110, 234, 0.18);
 }
 
 .analysis-toast {
