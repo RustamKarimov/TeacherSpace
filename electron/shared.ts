@@ -385,6 +385,6 @@ export interface TeacherDeskApi {
 
 declare global {
   interface Window {
-    teacherDesk: TeacherDeskApi;
+    teacherDesk?: TeacherDeskApi;
   }
 }

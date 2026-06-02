@@ -1081,17 +1081,17 @@ button {
 }
 
 .td-nav-brand {
-  height: 46px;
+  height: 42px;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 0 14px;
+  gap: 9px;
+  padding: 0 13px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .td-nav-brand-icon {
-  width: 24px;
-  height: 24px;
+  width: 23px;
+  height: 23px;
   display: grid;
   place-items: center;
   border-radius: 4px;
@@ -1101,25 +1101,31 @@ button {
 
 .td-nav-scroll {
   flex: 1;
-  padding: 10px 7px;
+  padding: 8px 7px;
   display: grid;
   align-content: start;
-  gap: 4px;
+  gap: 3px;
 }
 
 .td-nav button {
   width: 100%;
-  min-height: 30px;
+  min-height: 28px;
   border: 0;
   color: #cbd7e3;
   background: transparent;
   border-radius: 5px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 9px;
+  gap: 7px;
+  padding: 0 8px;
   cursor: pointer;
   text-align: left;
+  font-size: 13px;
+}
+
+.td-nav button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .td-nav button:hover {
@@ -1136,7 +1142,7 @@ button {
 
 .td-nav-section {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .td-nav-section-trigger svg:last-child,
@@ -1146,14 +1152,14 @@ button {
 
 .td-nav-children {
   display: grid;
-  gap: 2px;
-  padding-left: 6px;
+  gap: 1px;
+  padding-left: 5px;
 }
 
 .td-nav-children button {
-  min-height: 28px;
-  padding-left: 18px;
-  font-size: 13px;
+  min-height: 25px;
+  padding-left: 17px;
+  font-size: 12px;
 }
 
 .td-nav-children button.is-active {
@@ -1163,8 +1169,8 @@ button {
 
 .td-nav-footer {
   display: grid;
-  gap: 4px;
-  padding: 10px 8px 12px;
+  gap: 3px;
+  padding: 8px 8px 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.11);
 }
 
@@ -3071,9 +3077,9 @@ button {
 
 .mcq-layout-control-row {
   display: grid;
-  grid-template-columns: auto 84px 84px 84px;
+  grid-template-columns: auto 74px 74px 74px auto auto;
   align-items: end;
-  gap: 8px;
+  gap: 7px;
 }
 
 .mcq-list-tools-row {
@@ -3098,10 +3104,12 @@ button {
   align-self: end;
   display: inline-flex;
   align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .mcq-label-position-glyph {
-  width: 18px;
+  width: 20px;
   height: 18px;
   display: inline-block;
 }
@@ -3175,8 +3183,8 @@ button {
 .mcq-label-position-glyph::before {
   content: "A";
   position: absolute;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   display: grid;
   place-items: center;
   border: 1px solid currentColor;
@@ -3189,7 +3197,7 @@ button {
 .mcq-label-position-glyph::after {
   content: "";
   position: absolute;
-  width: 12px;
+  width: 11px;
   height: 10px;
   border-radius: 2px;
   background:
@@ -3211,22 +3219,22 @@ button {
 
 .mcq-label-position-glyph.is-above::before {
   top: 0;
-  left: 5px;
+  left: 6px;
 }
 
 .mcq-label-position-glyph.is-above::after {
   bottom: 0;
-  left: 3px;
+  left: 4px;
 }
 
 .mcq-label-position-glyph.is-below::before {
   bottom: 0;
-  left: 5px;
+  left: 6px;
 }
 
 .mcq-label-position-glyph.is-below::after {
   top: 0;
-  left: 3px;
+  left: 4px;
 }
 
 .mcq-option-source-row {

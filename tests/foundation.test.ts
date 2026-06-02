@@ -1,4 +1,9 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
+import initSqlJs from "sql.js";
+import { runMigrations } from "../electron/database";
 import { parseExamCode } from "../src/lib/examCode";
 import { toWorkspaceRelative } from "../src/lib/workspacePaths";
 
@@ -30,5 +35,33 @@ describe("workspace path handling", () => {
 
   it("keeps external paths absolute", () => {
     expect(toWorkspaceRelative("D:\\TeacherDesk_Workspace", "C:\\Downloads\\figure.png")).toBe("C:\\Downloads\\figure.png");
+  });
+});
+
+describe("database migrations", () => {
+  it("creates the analysis foundation tables", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "teacherdesk-db-"));
+    const databasePath = path.join(tempDir, "teacherdesk.sqlite");
+
+    const result = await runMigrations(databasePath);
+    expect(result.currentVersion).toBe(3);
+
+    const SQL = await initSqlJs();
+    const db = new SQL.Database(fs.readFileSync(databasePath));
+    const tables = db.exec("SELECT name FROM sqlite_master WHERE type = 'table';")[0].values.map((row) => String(row[0]));
+    db.close();
+
+    expect(tables).toEqual(expect.arrayContaining([
+      "analysis_students",
+      "analysis_exam_sessions",
+      "analysis_exam_variants",
+      "analysis_mcq_attempts",
+      "analysis_mcq_responses",
+      "analysis_structured_attempts",
+      "analysis_structured_question_marks",
+      "analysis_question_stats",
+      "analysis_topic_stats",
+      "analysis_tag_stats"
+    ]));
   });
 });
