@@ -5892,8 +5892,7 @@ button {
   background: #f8fbff;
 }
 
-.analysis-table td:first-child,
-.analysis-result-grid td:first-child {
+.analysis-table td:first-child {
   display: grid;
   gap: 2px;
 }
@@ -6076,7 +6075,7 @@ button {
 }
 
 .analysis-result-grid th:first-child,
-.analysis-result-grid td:first-child {
+.analysis-result-grid .analysis-student-cell {
   position: sticky;
   left: 0;
   z-index: 1;
@@ -6092,7 +6091,18 @@ button {
 }
 
 .analysis-result-grid .analysis-student-cell {
+  display: grid;
+  align-content: center;
+  gap: 2px;
   vertical-align: middle;
+}
+
+.analysis-result-grid .analysis-band-cell {
+  min-width: 34px;
+  color: #52637a;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 850;
 }
 
 .analysis-result-grid thead th:first-child {

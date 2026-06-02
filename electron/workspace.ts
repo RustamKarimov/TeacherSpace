@@ -110,9 +110,9 @@ export function defaultSettings(): AppSettings {
       },
       analysis: {
         defaultAcademicYear: "2025-2026",
-        defaultGrade: "",
-        defaultClassName: "",
-        questionsPerAnswerRow: 20,
+        defaultGrade: "13",
+        defaultClassName: "A",
+        questionsPerAnswerRow: 15,
         difficultyThresholds: {
           veryEasy: 85,
           easy: 70,
@@ -142,6 +142,9 @@ function mergeSettings(fallback: AppSettings, stored: Partial<AppSettings>): App
       analysis: {
         ...fallback.defaults.analysis,
         ...stored.defaults?.analysis,
+        defaultGrade: stored.defaults?.analysis?.defaultGrade?.trim() || fallback.defaults.analysis.defaultGrade,
+        defaultClassName: stored.defaults?.analysis?.defaultClassName?.trim() || fallback.defaults.analysis.defaultClassName,
+        questionsPerAnswerRow: Number(stored.defaults?.analysis?.questionsPerAnswerRow) || fallback.defaults.analysis.questionsPerAnswerRow,
         difficultyThresholds: { ...fallback.defaults.analysis.difficultyThresholds, ...stored.defaults?.analysis?.difficultyThresholds }
       }
     }

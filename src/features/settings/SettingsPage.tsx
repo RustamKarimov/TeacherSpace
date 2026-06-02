@@ -117,6 +117,8 @@ export function SettingsPage({ settings, workspace, onSettingsSaved }: Props) {
               onChange={(outputFolder) => update((current) => ({ ...current, defaults: { ...current.defaults, structuredGenerator: { ...current.defaults.structuredGenerator, outputFolder } } }))}
             />
             <NumberField label="Allowed over target" value={draft.defaults.structuredGenerator.allowanceMarks} onChange={(allowanceMarks) => update((current) => ({ ...current, defaults: { ...current.defaults, structuredGenerator: { ...current.defaults.structuredGenerator, allowanceMarks } } }))} />
+          </div>
+          <div className="settings-form-grid four">
             {["2", "3", "4", "5"].map((paper) => (
               <NumberField
                 key={paper}

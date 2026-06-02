@@ -258,17 +258,17 @@ function CapturePanel({ examType, settings, students }: { examType: ExamType; se
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [examSearch, setExamSearch] = useState("");
   const selectedExam = filteredCandidates.find((exam) => exam.id === selectedExamId) ?? filteredCandidates[0] ?? candidates[0];
-  const classOptions = useMemo(() => unique(students.map((student) => student.className).filter(Boolean)), [students]);
+  const classOptions = useMemo(() => unique(students.map(classGroupLabel).filter(Boolean)), [students]);
   const roster = useMemo(() => {
     if (selectedClasses.length === 0) return students;
-    return students.filter((student) => selectedClasses.includes(student.className));
+    return students.filter((student) => selectedClasses.includes(classGroupLabel(student)));
   }, [selectedClasses, students]);
   const questionCount = selectedExam?.questionCount ?? (examType === "mcq" ? settings?.defaults.mcqGenerator.questionCount ?? 40 : 5);
   const questions = Array.from({ length: questionCount }, (_, index) => `Q${index + 1}`);
   const questionsPerRow = Math.max(6, Math.min(30, settings?.defaults.analysis.questionsPerAnswerRow ?? 20));
   const copy = examType === "mcq"
     ? "Select each student's variant, then enter A/B/C/D answers. Cells advance automatically after typing."
-    : "Enter marks per structured question. Use arrow keys, Tab, or Enter to move through the sheet.";
+    : "Select each student's copy/variant, then enter marks per structured question. Use arrow keys, Tab, or Enter to move through the sheet.";
 
   useEffect(() => {
     if (!filteredCandidates.some((exam) => exam.id === selectedExamId)) {
@@ -398,8 +398,9 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
         <thead>
           <tr>
             <th>Student</th>
-            {mode === "mcq" ? <th>Variant</th> : null}
-            {Array.from({ length: bandWidth }, (_, index) => <th key={`h-${index}`}>Q</th>)}
+            <th>{mode === "mcq" ? "Variant" : "Copy"}</th>
+            <th>Set</th>
+            <th colSpan={bandWidth}>Questions</th>
             <th>Total</th>
             <th>%</th>
           </tr>
@@ -414,13 +415,14 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
                     <small>{student.schoolId || `${student.grade} ${student.className}`}</small>
                   </td>
                 ) : null}
-                {mode === "mcq" && bandIndex === 0 ? (
+                {bandIndex === 0 ? (
                   <td className="analysis-variant-cell" rowSpan={columnBands.length}>
-                    <select defaultValue={exam?.variants[0] ?? "A"}>
-                      {(exam?.variants.length ? exam.variants : ["A"]).map((variant) => <option key={variant}>{variant}</option>)}
+                    <select defaultValue={exam?.variants[0] ?? (mode === "mcq" ? "A" : "QP")}>
+                      {(exam?.variants.length ? exam.variants : [mode === "mcq" ? "A" : "QP"]).map((variant) => <option key={variant}>{variant}</option>)}
                     </select>
                   </td>
                 ) : null}
+                <td className="analysis-band-cell">{bandIndex + 1}</td>
                 {Array.from({ length: bandWidth }, (_, cellIndex) => {
                   const column = band[cellIndex];
                   const questionIndex = columns.indexOf(column);
@@ -509,7 +511,7 @@ function buildExamCandidates(settings: AppSettings | null): ExamCandidate[] {
       title: settings?.defaults.structuredGenerator.title || "Structured Physics Practice",
       detail: "Latest structured exam package",
       questionCount: 5,
-      variants: ["QP"]
+      variants: ["A", "B"]
     },
     {
       id: "structured-paper-2",
@@ -517,7 +519,7 @@ function buildExamCandidates(settings: AppSettings | null): ExamCandidate[] {
       title: "Paper 2 timed practice",
       detail: "Structured question set",
       questionCount: 7,
-      variants: ["QP"]
+      variants: ["A", "B"]
     }
   ];
 }
@@ -526,6 +528,10 @@ function chunkBalanced<T>(items: T[], maxPerRow: number): T[][] {
   const rowCount = Math.max(1, Math.ceil(items.length / maxPerRow));
   const perRow = Math.ceil(items.length / rowCount);
   return Array.from({ length: rowCount }, (_, index) => items.slice(index * perRow, (index + 1) * perRow));
+}
+
+function classGroupLabel(student: Pick<AnalysisStudentRecord, "grade" | "className">) {
+  return `${student.grade}${student.className}`.trim();
 }
 
 function unique(values: string[]) {
