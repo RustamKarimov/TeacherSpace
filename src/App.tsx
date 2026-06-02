@@ -3,9 +3,10 @@ import { AppShell } from "./app/AppShell";
 import { teacherDeskApi } from "./lib/rendererApi";
 import type { AppSettings, McqQuestionRecord, ThemeMode, WorkspaceInfo } from "./types";
 
-type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata";
+type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry";
 
 const DashboardPage = lazy(() => import("./features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const AnalysisPage = lazy(() => import("./features/analysis/AnalysisPage").then((module) => ({ default: module.AnalysisPage })));
 const ImportExportPage = lazy(() => import("./features/importExport/ImportExportPage").then((module) => ({ default: module.ImportExportPage })));
 const QuestionBankPage = lazy(() => import("./features/mcq/bank/QuestionBankPage").then((module) => ({ default: module.QuestionBankPage })));
 const McqEditorPage = lazy(() => import("./features/mcq/editor/McqEditorPage").then((module) => ({ default: module.McqEditorPage })));
@@ -61,6 +62,14 @@ export function App() {
   const title =
     activeView === "dashboard"
       ? "Dashboard"
+      : activeView === "analysis-overview"
+      ? "Analysis"
+      : activeView === "analysis-students"
+      ? "Students"
+      : activeView === "analysis-mcq-entry"
+      ? "MCQ Answer Capture"
+      : activeView === "analysis-structured-entry"
+      ? "Structured Mark Capture"
       : activeView === "question-bank"
       ? "MCQ Question Bank"
       : activeView === "exam-generator"
@@ -98,6 +107,14 @@ export function App() {
         <Suspense fallback={<div className="td-page-loading">Loading TeacherDesk module...</div>}>
           {activeView === "dashboard" ? (
             <DashboardPage workspace={workspace} onNavigate={setActiveView} />
+          ) : activeView === "analysis-overview" ? (
+            <AnalysisPage mode="overview" settings={settings} />
+          ) : activeView === "analysis-students" ? (
+            <AnalysisPage mode="students" settings={settings} />
+          ) : activeView === "analysis-mcq-entry" ? (
+            <AnalysisPage mode="mcq-entry" settings={settings} />
+          ) : activeView === "analysis-structured-entry" ? (
+            <AnalysisPage mode="structured-entry" settings={settings} />
           ) : activeView === "add-edit" ? (
             <McqEditorPage
               editingQuestion={editingQuestion}

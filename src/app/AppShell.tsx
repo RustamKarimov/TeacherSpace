@@ -1,7 +1,9 @@
 import {
   BookOpen,
+  BarChart3,
   ChevronDown,
   CircleHelp,
+  ClipboardCheck,
   FileText,
   Home,
   Import,
@@ -13,7 +15,8 @@ import {
   Scissors,
   Settings,
   Shuffle,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Users
 } from "lucide-react";
 import clsx from "clsx";
 import { useState } from "react";
@@ -25,7 +28,7 @@ type AppShellProps = {
   children: ReactNode;
   theme: ThemeMode;
   title?: string;
-  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata") => void;
+  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry") => void;
   onThemeChange: (theme: ThemeMode) => void;
 };
 
@@ -33,6 +36,7 @@ export function AppShell({ activeItem, children, title = "Dashboard", onNavigate
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMcqOpen, setIsMcqOpen] = useState(true);
   const [isStructuredOpen, setIsStructuredOpen] = useState(true);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(true);
 
   return (
@@ -103,6 +107,34 @@ export function AppShell({ activeItem, children, title = "Dashboard", onNavigate
             <Import size={18} />
             <span>Import / Export</span>
           </button>
+
+          <div className={clsx("td-nav-section", isAnalysisOpen && "is-open")}>
+            <button className={activeItem.startsWith("analysis") ? "td-nav-section-trigger is-active" : "td-nav-section-trigger"} type="button" onClick={() => setIsAnalysisOpen((value) => !value)}>
+              <BarChart3 size={18} />
+              <span>Analysis</span>
+              <ChevronDown size={16} />
+            </button>
+            {isAnalysisOpen ? (
+              <div className="td-nav-children">
+                <button className={activeItem === "analysis-overview" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-overview")}>
+                  <BarChart3 size={14} />
+                  <span>Overview</span>
+                </button>
+                <button className={activeItem === "analysis-students" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-students")}>
+                  <Users size={14} />
+                  <span>Students</span>
+                </button>
+                <button className={activeItem === "analysis-mcq-entry" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-mcq-entry")}>
+                  <ClipboardCheck size={14} />
+                  <span>MCQ Answers</span>
+                </button>
+                <button className={activeItem === "analysis-structured-entry" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-structured-entry")}>
+                  <ClipboardCheck size={14} />
+                  <span>Structured Marks</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
 
           <div className={clsx("td-nav-section", isSettingsOpen && "is-open")}>
             <button className={activeItem === "settings" || activeItem === "metadata" || activeItem === "structured-metadata" ? "td-nav-section-trigger is-active" : "td-nav-section-trigger"} type="button" onClick={() => setIsSettingsOpen((value) => !value)}>

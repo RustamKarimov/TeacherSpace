@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, ipcMain, shell, dialog } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { deleteMcqQuestion, deleteStructuredQuestions, getMcqQuestion, listMcqQuestions, listStructuredQuestions, runMigrations, saveMcqQuestion, updateStructuredQuestionMetadata } from "./database.js";
+import { deleteAnalysisStudent, deleteMcqQuestion, deleteStructuredQuestions, getAnalysisOverview, getMcqQuestion, listAnalysisStudents, listMcqQuestions, listStructuredQuestions, runMigrations, saveAnalysisStudent, saveMcqQuestion, updateStructuredQuestionMetadata } from "./database.js";
 import { generateMcqExamPackage } from "./examGenerator.js";
 import { exportTeacherDeskPackage, importTeacherDeskPackage } from "./importExport.js";
 import { generateStructuredExamPackage, previewStructuredExamPackage } from "./structuredExamGenerator.js";
@@ -160,6 +160,22 @@ app.whenReady().then(async () => {
 
     const deletedCount = await deleteStructuredQuestions(workspaceInfo.databasePath, normalizedIds);
     return { deletedCount, deletedFiles, failedFiles };
+  });
+  ipcMain.handle("analysis:overview", async () => {
+    const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
+    return getAnalysisOverview(workspaceInfo.databasePath);
+  });
+  ipcMain.handle("analysis:list-students", async () => {
+    const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
+    return listAnalysisStudents(workspaceInfo.databasePath);
+  });
+  ipcMain.handle("analysis:save-student", async (_event, payload) => {
+    const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
+    return saveAnalysisStudent(workspaceInfo.databasePath, payload);
+  });
+  ipcMain.handle("analysis:delete-student", async (_event, id: string) => {
+    const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
+    return deleteAnalysisStudent(workspaceInfo.databasePath, id);
   });
   ipcMain.handle("shell:open-folder", async (_event, folderPath: string) => {
     if (!folderPath || !folderPath.trim()) {

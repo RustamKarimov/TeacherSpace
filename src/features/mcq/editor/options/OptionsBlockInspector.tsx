@@ -519,7 +519,7 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
       ) : null}
 
       {block.mode === "standard" ? <InspectorSection title="Layout" icon={<AlignLeft size={15} />}>
-        <div className="mcq-layout-control-row">
+        <div className="mcq-layout-icon-row">
           <div className="mcq-segment-row">
             <SegmentButton active={block.settings.layout === "one"} compact label="One column" onClick={() => setLayout("one")}>
               <span className="mcq-column-icon is-one"><i /></span>
@@ -531,21 +531,23 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
               <span className="mcq-column-icon is-four"><i /><i /><i /><i /></span>
             </SegmentButton>
           </div>
-          <NumberControl label="Label width" value={block.settings.labelWidth} min={18} max={42} onChange={(value) => updateSettings((settings) => ({ ...settings, labelWidth: value }))} />
-          <NumberControl label="Option gap" value={block.settings.optionGap} min={0} max={24} onChange={(value) => updateSettings((settings) => ({ ...settings, optionGap: value }))} />
-          <NumberControl label="Label gap" value={block.settings.labelContentGap ?? 4} min={0} max={24} onChange={(value) => updateSettings((settings) => ({ ...settings, labelContentGap: value }))} />
-        </div>
-        <div className="mcq-layout-align-row">
+          <span className="mcq-layout-divider" aria-hidden="true" />
           <div className="mcq-icon-toggle-row mcq-alignment-toggle-group">
             <IconToggle active={block.settings.alignment === "left"} label="Align left" onClick={() => setAlignment("left")} icon={<AlignLeft size={15} />} />
             <IconToggle active={block.settings.alignment === "center"} label="Align center" onClick={() => setAlignment("center")} icon={<AlignCenter size={15} />} />
             <IconToggle active={block.settings.alignment === "right"} label="Align right" onClick={() => setAlignment("right")} icon={<AlignRight size={15} />} />
           </div>
+          <span className="mcq-layout-divider" aria-hidden="true" />
           <div className="mcq-icon-toggle-row mcq-alignment-toggle-group">
             <IconToggle active={block.settings.verticalAlignment === "top"} label="Align options by top" onClick={() => setOptionVerticalAlignment("top")} icon={<AlignVerticalJustifyStart size={15} />} />
             <IconToggle active={block.settings.verticalAlignment === "middle"} label="Align options by middle" onClick={() => setOptionVerticalAlignment("middle")} icon={<AlignVerticalJustifyCenter size={15} />} />
             <IconToggle active={block.settings.verticalAlignment === "bottom"} label="Align options by bottom" onClick={() => setOptionVerticalAlignment("bottom")} icon={<AlignVerticalJustifyEnd size={15} />} />
           </div>
+        </div>
+        <div className="mcq-layout-number-row">
+          <NumberControl label="Label width" value={block.settings.labelWidth} min={18} max={42} onChange={(value) => updateSettings((settings) => ({ ...settings, labelWidth: value }))} />
+          <NumberControl label="Option gap" value={block.settings.optionGap} min={0} max={24} onChange={(value) => updateSettings((settings) => ({ ...settings, optionGap: value }))} />
+          <NumberControl label="Label gap" value={block.settings.labelContentGap ?? 4} min={0} max={24} onChange={(value) => updateSettings((settings) => ({ ...settings, labelContentGap: value }))} />
         </div>
         <div className="mcq-layout-letter-row">
           <span className="mcq-mini-label">Letter position</span>

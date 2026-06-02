@@ -1,4 +1,4 @@
-import type { AppSettings, McqExamGeneratorPayload, McqQuestionRecord, McqQuestionSavePayload, StructuredSplitterInput, TeacherDeskApi, WorkspaceInfo } from "../types";
+import type { AnalysisStudentRecord, AppSettings, McqExamGeneratorPayload, McqQuestionRecord, McqQuestionSavePayload, StructuredSplitterInput, TeacherDeskApi, WorkspaceInfo } from "../types";
 
 const fallbackSettings: AppSettings = {
   theme: "light",
@@ -175,6 +175,45 @@ const fallbackApi: TeacherDeskApi = {
     void payload;
     throw new Error("Structured exam generation requires the TeacherDesk desktop app.");
   },
+  async getAnalysisOverview() {
+    const students = readFallbackStudents();
+    return {
+      students: {
+        active: students.filter((student) => student.status === "Active").length,
+        archived: students.filter((student) => student.status === "Archived").length,
+        classes: new Set(students.filter((student) => student.status === "Active").map((student) => `${student.academicYear}:${student.grade}:${student.className}`)).size
+      },
+      questions: { mcq: readFallbackQuestions().length, structured: 0 },
+      results: { mcqAttempts: 0, structuredAttempts: 0 }
+    };
+  },
+  async listAnalysisStudents() {
+    return readFallbackStudents();
+  },
+  async saveAnalysisStudent(payload) {
+    const students = readFallbackStudents();
+    const now = new Date().toISOString();
+    const id = payload.id ?? crypto.randomUUID();
+    const existing = students.find((student) => student.id === id);
+    const record = {
+      id,
+      schoolId: payload.schoolId,
+      firstName: payload.firstName,
+      surname: payload.surname,
+      academicYear: payload.academicYear,
+      grade: payload.grade,
+      className: payload.className,
+      status: payload.status,
+      notes: payload.notes,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now
+    };
+    localStorage.setItem("teacherdesk.analysisStudents", JSON.stringify([record, ...students.filter((student) => student.id !== id)]));
+    return record;
+  },
+  async deleteAnalysisStudent(id) {
+    localStorage.setItem("teacherdesk.analysisStudents", JSON.stringify(readFallbackStudents().filter((student) => student.id !== id)));
+  },
   async exportTeacherDeskPackage() {
     throw new Error("Import and export require the TeacherDesk desktop app.");
   },
@@ -301,6 +340,14 @@ async function writeBrowserFile(directory: BrowserDirectoryHandle, fileName: str
 function readFallbackQuestions(): McqQuestionRecord[] {
   try {
     return JSON.parse(localStorage.getItem("teacherdesk.mcqQuestions") ?? "[]") as McqQuestionRecord[];
+  } catch {
+    return [];
+  }
+}
+
+function readFallbackStudents(): AnalysisStudentRecord[] {
+  try {
+    return JSON.parse(localStorage.getItem("teacherdesk.analysisStudents") ?? "[]") as AnalysisStudentRecord[];
   } catch {
     return [];
   }

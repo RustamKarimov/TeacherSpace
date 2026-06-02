@@ -339,6 +339,48 @@ export interface StructuredExamGeneratorResult {
   msPreview?: StructuredPreviewData;
 }
 
+export interface AnalysisStudentRecord {
+  id: string;
+  schoolId: string;
+  firstName: string;
+  surname: string;
+  academicYear: string;
+  grade: string;
+  className: string;
+  status: "Active" | "Archived";
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AnalysisStudentSavePayload {
+  id?: string;
+  schoolId: string;
+  firstName: string;
+  surname: string;
+  academicYear: string;
+  grade: string;
+  className: string;
+  status: "Active" | "Archived";
+  notes: string;
+}
+
+export interface AnalysisOverview {
+  students: {
+    active: number;
+    archived: number;
+    classes: number;
+  };
+  questions: {
+    mcq: number;
+    structured: number;
+  };
+  results: {
+    mcqAttempts: number;
+    structuredAttempts: number;
+  };
+}
+
 export interface ImportExportResult {
   ok: boolean;
   folderPath: string;
@@ -378,6 +420,10 @@ export interface TeacherDeskApi {
   updateStructuredQuestionMetadata: (payload: StructuredMetadataUpdate) => Promise<StructuredQuestionRecord>;
   previewStructuredExamPackage: (payload: StructuredExamGeneratorPayload) => Promise<StructuredExamGeneratorResult>;
   generateStructuredExamPackage: (payload: StructuredExamGeneratorPayload) => Promise<StructuredExamGeneratorResult>;
+  getAnalysisOverview: () => Promise<AnalysisOverview>;
+  listAnalysisStudents: () => Promise<AnalysisStudentRecord[]>;
+  saveAnalysisStudent: (payload: AnalysisStudentSavePayload) => Promise<AnalysisStudentRecord>;
+  deleteAnalysisStudent: (id: string) => Promise<void>;
   exportTeacherDeskPackage: (outputFolder: string) => Promise<ImportExportResult>;
   importTeacherDeskPackage: (packageFolder: string) => Promise<ImportExportResult>;
   openFolder: (folderPath: string) => Promise<void>;

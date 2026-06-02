@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import initSqlJs, { type Database } from "sql.js";
-import type { McqQuestionRecord, McqQuestionSavePayload, StructuredManifestRow, StructuredMetadataUpdate, StructuredQuestionRecord, StructuredSplitterInput, StructuredValidationReport } from "./shared.js";
+import type { AnalysisOverview, AnalysisStudentRecord, AnalysisStudentSavePayload, McqQuestionRecord, McqQuestionSavePayload, StructuredManifestRow, StructuredMetadataUpdate, StructuredQuestionRecord, StructuredSplitterInput, StructuredValidationReport } from "./shared.js";
 
 export interface MigrationResult {
   databasePath: string;
@@ -331,6 +331,23 @@ function rowToObject(columns: string[], values: unknown[]) {
   return Object.fromEntries(columns.map((column, index) => [column, values[index]]));
 }
 
+function rowToAnalysisStudent(columns: string[], values: unknown[]): AnalysisStudentRecord {
+  const data = rowToObject(columns, values) as Record<string, string>;
+  return {
+    id: String(data.id ?? ""),
+    schoolId: String(data.school_id ?? ""),
+    firstName: String(data.first_name ?? ""),
+    surname: String(data.surname ?? ""),
+    academicYear: String(data.academic_year ?? ""),
+    grade: String(data.grade ?? ""),
+    className: String(data.class_name ?? ""),
+    status: String(data.status ?? "Active") === "Archived" ? "Archived" : "Active",
+    notes: String(data.notes ?? ""),
+    createdAt: String(data.created_at ?? ""),
+    updatedAt: String(data.updated_at ?? "")
+  };
+}
+
 function readQuestion(db: Database, id: string): McqQuestionRecord | null {
   const result = db.exec(
     `SELECT id, exam_code, original_question_number, syllabus, session, year, paper, paper_version,
@@ -556,6 +573,114 @@ export async function deleteMcqQuestion(databasePath: string, id: string): Promi
   try {
     db.run("PRAGMA foreign_keys = ON;");
     db.run("DELETE FROM mcq_questions WHERE id = ?;", [id]);
+    persistDatabase(db, databasePath);
+  } finally {
+    db.close();
+  }
+}
+
+export async function getAnalysisOverview(databasePath: string): Promise<AnalysisOverview> {
+  const db = await openDatabase(databasePath);
+  try {
+    const scalar = (sql: string) => Number(db.exec(sql)[0]?.values[0]?.[0] ?? 0);
+    return {
+      students: {
+        active: scalar("SELECT COUNT(*) FROM analysis_students WHERE status = 'Active';"),
+        archived: scalar("SELECT COUNT(*) FROM analysis_students WHERE status = 'Archived';"),
+        classes: scalar("SELECT COUNT(*) FROM (SELECT DISTINCT academic_year, grade, class_name FROM analysis_students WHERE status = 'Active');")
+      },
+      questions: {
+        mcq: scalar("SELECT COUNT(*) FROM mcq_questions;"),
+        structured: scalar("SELECT COUNT(*) FROM structured_questions;")
+      },
+      results: {
+        mcqAttempts: scalar("SELECT COUNT(*) FROM analysis_mcq_attempts;"),
+        structuredAttempts: scalar("SELECT COUNT(*) FROM analysis_structured_attempts;")
+      }
+    };
+  } finally {
+    db.close();
+  }
+}
+
+export async function listAnalysisStudents(databasePath: string): Promise<AnalysisStudentRecord[]> {
+  const db = await openDatabase(databasePath);
+  try {
+    const result = db.exec(
+      `SELECT id, school_id, first_name, surname, academic_year, grade, class_name, status, notes, created_at, updated_at
+       FROM analysis_students
+       ORDER BY academic_year DESC, grade, class_name, surname, first_name;`
+    );
+    return result[0]?.values.map((row) => rowToAnalysisStudent(result[0].columns, row)) ?? [];
+  } finally {
+    db.close();
+  }
+}
+
+export async function saveAnalysisStudent(databasePath: string, payload: AnalysisStudentSavePayload): Promise<AnalysisStudentRecord> {
+  const db = await openDatabase(databasePath);
+  const now = new Date().toISOString();
+  const id = payload.id ?? randomUUID();
+  const existing = payload.id
+    ? db.exec("SELECT created_at FROM analysis_students WHERE id = ?;", [payload.id])[0]?.values[0]?.[0]
+    : null;
+
+  try {
+    db.run("BEGIN;");
+    db.run(
+      `INSERT INTO analysis_students (
+        id, school_id, first_name, surname, academic_year, grade, class_name, status, notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        school_id = excluded.school_id,
+        first_name = excluded.first_name,
+        surname = excluded.surname,
+        academic_year = excluded.academic_year,
+        grade = excluded.grade,
+        class_name = excluded.class_name,
+        status = excluded.status,
+        notes = excluded.notes,
+        updated_at = excluded.updated_at;`,
+      [
+        id,
+        payload.schoolId.trim(),
+        payload.firstName.trim(),
+        payload.surname.trim(),
+        payload.academicYear.trim(),
+        payload.grade.trim(),
+        payload.className.trim(),
+        payload.status,
+        payload.notes.trim(),
+        existing ? String(existing) : now,
+        now
+      ]
+    );
+    db.run("COMMIT;");
+    persistDatabase(db, databasePath);
+
+    const result = db.exec(
+      `SELECT id, school_id, first_name, surname, academic_year, grade, class_name, status, notes, created_at, updated_at
+       FROM analysis_students WHERE id = ?;`,
+      [id]
+    );
+    return rowToAnalysisStudent(result[0].columns, result[0].values[0]);
+  } catch (error) {
+    try {
+      db.run("ROLLBACK;");
+    } catch {
+      // Ignore rollback errors.
+    }
+    throw error;
+  } finally {
+    db.close();
+  }
+}
+
+export async function deleteAnalysisStudent(databasePath: string, id: string): Promise<void> {
+  const db = await openDatabase(databasePath);
+  try {
+    db.run("PRAGMA foreign_keys = ON;");
+    db.run("DELETE FROM analysis_students WHERE id = ?;", [id]);
     persistDatabase(db, databasePath);
   } finally {
     db.close();
