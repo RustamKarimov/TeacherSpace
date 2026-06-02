@@ -1,4 +1,4 @@
-import { BarChart3, CheckCircle2, ClipboardCheck, Plus, Save, Search, Trash2, Users } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Plus, Save, Search, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { teacherDeskApi } from "../../lib/rendererApi";
@@ -105,15 +105,6 @@ export function AnalysisPage({ mode, settings }: Props) {
 
   return (
     <div className="analysis-page">
-      <header className="analysis-header">
-        <div>
-          <h2>{modeTitle(mode)}</h2>
-        </div>
-        <div className="analysis-header-actions">
-          <button type="button" onClick={() => void load()}><BarChart3 size={15} /> Refresh</button>
-        </div>
-      </header>
-
       {mode === "overview" ? <OverviewPanel overview={overview} /> : null}
       {mode === "students" ? (
         <StudentsPanel
@@ -265,7 +256,7 @@ function CapturePanel({ examType, settings, students }: { examType: ExamType; se
   }, [selectedClasses, students]);
   const questionCount = selectedExam?.questionCount ?? (examType === "mcq" ? settings?.defaults.mcqGenerator.questionCount ?? 40 : 5);
   const questions = Array.from({ length: questionCount }, (_, index) => `Q${index + 1}`);
-  const questionsPerRow = Math.max(6, Math.min(30, settings?.defaults.analysis.questionsPerAnswerRow ?? 20));
+  const questionsPerRow = Math.max(6, Math.min(30, settings?.defaults.analysis.questionsPerAnswerRow || 15));
   const copy = examType === "mcq"
     ? "Select each student's variant, then enter A/B/C/D answers. Cells advance automatically after typing."
     : "Select each student's copy/variant, then enter marks per structured question. Use arrow keys, Tab, or Enter to move through the sheet.";
@@ -393,8 +384,8 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
   }
 
   return (
-    <div className="analysis-result-grid-wrap">
-      <table className="analysis-result-grid is-banded" ref={tableRef}>
+    <div className={`analysis-result-grid-wrap is-${mode}`}>
+      <table className={`analysis-result-grid is-banded is-${mode}`} ref={tableRef}>
         <thead>
           <tr>
             <th>Student</th>
@@ -536,11 +527,4 @@ function classGroupLabel(student: Pick<AnalysisStudentRecord, "grade" | "classNa
 
 function unique(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-}
-
-function modeTitle(mode: AnalysisMode) {
-  if (mode === "students") return "Students";
-  if (mode === "mcq-entry") return "MCQ answer capture";
-  if (mode === "structured-entry") return "Structured mark capture";
-  return "Overview";
 }

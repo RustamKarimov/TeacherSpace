@@ -10,11 +10,11 @@ type Props = {
 };
 
 export function SettingsPage({ settings, workspace, onSettingsSaved }: Props) {
-  const [draft, setDraft] = useState<AppSettings | null>(settings);
+  const [draft, setDraft] = useState<AppSettings | null>(() => normalizeSettings(settings));
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => setDraft(settings), [settings]);
+  useEffect(() => setDraft(normalizeSettings(settings)), [settings]);
 
   if (!draft) {
     return <div className="settings-page"><section className="settings-card"><strong>Loading settings...</strong></section></div>;
@@ -25,10 +25,12 @@ export function SettingsPage({ settings, workspace, onSettingsSaved }: Props) {
   }
 
   async function save() {
-    if (!draft) return;
+    const normalized = normalizeSettings(draft);
+    if (!normalized) return;
     setIsSaving(true);
     try {
-      const saved = await teacherDeskApi.saveSettings(draft);
+      const saved = normalizeSettings(await teacherDeskApi.saveSettings(normalized)) ?? normalized;
+      setDraft(saved);
       onSettingsSaved(saved);
       setMessage("Settings saved.");
     } catch (error) {
@@ -162,6 +164,24 @@ export function SettingsPage({ settings, workspace, onSettingsSaved }: Props) {
       {message ? <div className="td-app-notice">{message}</div> : null}
     </div>
   );
+}
+
+function normalizeSettings(settings: AppSettings | null): AppSettings | null {
+  if (!settings) return null;
+  const analysis = settings.defaults.analysis;
+  return {
+    ...settings,
+    defaults: {
+      ...settings.defaults,
+      analysis: {
+        ...analysis,
+        defaultAcademicYear: analysis.defaultAcademicYear?.trim() || "2025-2026",
+        defaultGrade: analysis.defaultGrade?.trim() || "13",
+        defaultClassName: analysis.defaultClassName?.trim() || "A",
+        questionsPerAnswerRow: Number(analysis.questionsPerAnswerRow) || 15
+      }
+    }
+  };
 }
 
 function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
