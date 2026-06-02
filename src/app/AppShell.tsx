@@ -28,7 +28,7 @@ type AppShellProps = {
   children: ReactNode;
   theme: ThemeMode;
   title?: string;
-  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry") => void;
+  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
   onThemeChange: (theme: ThemeMode) => void;
 };
 
@@ -131,6 +131,26 @@ export function AppShell({ activeItem, children, title = "Dashboard", onNavigate
                 <button className={activeItem === "analysis-structured-entry" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-structured-entry")}>
                   <ClipboardCheck size={14} />
                   <span>Structured Marks</span>
+                </button>
+                <button className={activeItem === "analysis-student" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-student")}>
+                  <Users size={14} />
+                  <span>By Student</span>
+                </button>
+                <button className={activeItem === "analysis-question" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-question")}>
+                  <ClipboardCheck size={14} />
+                  <span>By Question</span>
+                </button>
+                <button className={activeItem === "analysis-exam" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-exam")}>
+                  <BarChart3 size={14} />
+                  <span>By Exam</span>
+                </button>
+                <button className={activeItem === "analysis-topic" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-topic")}>
+                  <SlidersHorizontal size={14} />
+                  <span>By Topic</span>
+                </button>
+                <button className={activeItem === "analysis-tag" ? "is-active" : undefined} type="button" onClick={() => onNavigate("analysis-tag")}>
+                  <SlidersHorizontal size={14} />
+                  <span>By Tag</span>
                 </button>
               </div>
             ) : null}

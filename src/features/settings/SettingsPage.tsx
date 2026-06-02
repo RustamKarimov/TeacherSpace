@@ -154,7 +154,6 @@ export function SettingsPage({ settings, workspace, onSettingsSaved }: Props) {
           </header>
           <div className="settings-form-grid two">
             <TextField label="Academic year" value={draft.defaults.analysis.defaultAcademicYear} onChange={(defaultAcademicYear) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, defaultAcademicYear } } }))} />
-            <NumberField label="Questions per answer row" value={draft.defaults.analysis.questionsPerAnswerRow} onChange={(questionsPerAnswerRow) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, questionsPerAnswerRow } } }))} />
             <TextField label="Default grade" value={draft.defaults.analysis.defaultGrade} onChange={(defaultGrade) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, defaultGrade } } }))} />
             <TextField label="Default class" value={draft.defaults.analysis.defaultClassName} onChange={(defaultClassName) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, defaultClassName } } }))} />
           </div>

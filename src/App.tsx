@@ -3,7 +3,7 @@ import { AppShell } from "./app/AppShell";
 import { teacherDeskApi } from "./lib/rendererApi";
 import type { AppSettings, McqQuestionRecord, ThemeMode, WorkspaceInfo } from "./types";
 
-type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry";
+type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag";
 
 const DashboardPage = lazy(() => import("./features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const AnalysisPage = lazy(() => import("./features/analysis/AnalysisPage").then((module) => ({ default: module.AnalysisPage })));
@@ -70,6 +70,16 @@ export function App() {
       ? "MCQ Answer Capture"
       : activeView === "analysis-structured-entry"
       ? "Structured Mark Capture"
+      : activeView === "analysis-student"
+      ? "Student Analysis"
+      : activeView === "analysis-question"
+      ? "Question Analysis"
+      : activeView === "analysis-exam"
+      ? "Exam Analysis"
+      : activeView === "analysis-topic"
+      ? "Topic Analysis"
+      : activeView === "analysis-tag"
+      ? "Tag Analysis"
       : activeView === "question-bank"
       ? "MCQ Question Bank"
       : activeView === "exam-generator"
@@ -115,6 +125,16 @@ export function App() {
             <AnalysisPage mode="mcq-entry" settings={settings} />
           ) : activeView === "analysis-structured-entry" ? (
             <AnalysisPage mode="structured-entry" settings={settings} />
+          ) : activeView === "analysis-student" ? (
+            <AnalysisPage mode="student-analysis" settings={settings} />
+          ) : activeView === "analysis-question" ? (
+            <AnalysisPage mode="question-analysis" settings={settings} />
+          ) : activeView === "analysis-exam" ? (
+            <AnalysisPage mode="exam-analysis" settings={settings} />
+          ) : activeView === "analysis-topic" ? (
+            <AnalysisPage mode="topic-analysis" settings={settings} />
+          ) : activeView === "analysis-tag" ? (
+            <AnalysisPage mode="tag-analysis" settings={settings} />
           ) : activeView === "add-edit" ? (
             <McqEditorPage
               editingQuestion={editingQuestion}

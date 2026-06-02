@@ -4,7 +4,7 @@ import type { KeyboardEvent } from "react";
 import { teacherDeskApi } from "../../lib/rendererApi";
 import type { AnalysisOverview, AnalysisStudentRecord, AnalysisStudentSavePayload, AppSettings } from "../../types";
 
-type AnalysisMode = "overview" | "students" | "mcq-entry" | "structured-entry";
+type AnalysisMode = "overview" | "students" | "mcq-entry" | "structured-entry" | "student-analysis" | "question-analysis" | "exam-analysis" | "topic-analysis" | "tag-analysis";
 type ExamType = "mcq" | "structured";
 
 type Props = {
@@ -121,6 +121,11 @@ export function AnalysisPage({ mode, settings }: Props) {
       ) : null}
       {mode === "mcq-entry" ? <CapturePanel examType="mcq" settings={settings} students={activeStudents} /> : null}
       {mode === "structured-entry" ? <CapturePanel examType="structured" settings={settings} students={activeStudents} /> : null}
+      {mode === "student-analysis" ? <PlaceholderAnalysisPanel type="student" /> : null}
+      {mode === "question-analysis" ? <PlaceholderAnalysisPanel type="question" /> : null}
+      {mode === "exam-analysis" ? <PlaceholderAnalysisPanel type="exam" /> : null}
+      {mode === "topic-analysis" ? <PlaceholderAnalysisPanel type="topic" /> : null}
+      {mode === "tag-analysis" ? <PlaceholderAnalysisPanel type="tag" /> : null}
 
       {message ? <div className="analysis-toast">{message}</div> : null}
     </div>
@@ -256,7 +261,6 @@ function CapturePanel({ examType, settings, students }: { examType: ExamType; se
   }, [selectedClasses, students]);
   const questionCount = selectedExam?.questionCount ?? (examType === "mcq" ? settings?.defaults.mcqGenerator.questionCount ?? 40 : 5);
   const questions = Array.from({ length: questionCount }, (_, index) => `Q${index + 1}`);
-  const questionsPerRow = Math.max(6, Math.min(30, settings?.defaults.analysis.questionsPerAnswerRow || 15));
   const copy = examType === "mcq"
     ? "Select each student's variant, then enter A/B/C/D answers. Cells advance automatically after typing."
     : "Select each student's copy/variant, then enter marks per structured question. Use arrow keys, Tab, or Enter to move through the sheet.";
@@ -285,7 +289,6 @@ function CapturePanel({ examType, settings, students }: { examType: ExamType; se
         columns={questions}
         exam={selectedExam}
         mode={examType}
-        questionsPerRow={questionsPerRow}
         students={roster}
       />
     </section>
@@ -349,14 +352,27 @@ function ClassMultiSelect({ options, selected, onChange }: { options: string[]; 
   );
 }
 
-function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { columns: string[]; exam?: ExamCandidate; mode: ExamType; questionsPerRow: number; students: AnalysisStudentRecord[] }) {
+function ResultGrid({ columns, exam, mode, students }: { columns: string[]; exam?: ExamCandidate; mode: ExamType; students: AnalysisStudentRecord[] }) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<HTMLTableElement | null>(null);
+  const [availableWidth, setAvailableWidth] = useState(1200);
   const visibleStudents = students.length ? students : [
     { id: "placeholder-1", firstName: "Student", surname: "One", schoolId: "S001", academicYear: "", grade: "12", className: "A", status: "Active", notes: "", createdAt: "", updatedAt: "" },
     { id: "placeholder-2", firstName: "Student", surname: "Two", schoolId: "S002", academicYear: "", grade: "12", className: "A", status: "Active", notes: "", createdAt: "", updatedAt: "" }
   ] satisfies AnalysisStudentRecord[];
+  const questionsPerRow = useMemo(() => getResponsiveQuestionCount(availableWidth, mode), [availableWidth, mode]);
   const columnBands = chunkBalanced(columns, questionsPerRow);
   const bandWidth = Math.max(...columnBands.map((band) => band.length), 1);
+
+  useEffect(() => {
+    const element = wrapRef.current;
+    if (!element) return;
+    const updateWidth = () => setAvailableWidth(element.clientWidth);
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   function focusCell(studentIndex: number, questionIndex: number) {
     const input = tableRef.current?.querySelector<HTMLInputElement>(`[data-analysis-cell="${studentIndex}:${questionIndex}"]`);
@@ -384,13 +400,12 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
   }
 
   return (
-    <div className={`analysis-result-grid-wrap is-${mode}`}>
+    <div className={`analysis-result-grid-wrap is-${mode}`} ref={wrapRef}>
       <table className={`analysis-result-grid is-banded is-${mode}`} ref={tableRef}>
         <thead>
           <tr>
             <th>Student</th>
             <th>{mode === "mcq" ? "Variant" : "Copy"}</th>
-            <th>Set</th>
             <th colSpan={bandWidth}>Questions</th>
             <th>Total</th>
             <th>%</th>
@@ -402,8 +417,10 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
               <tr key={`${student.id}-${bandIndex}`}>
                 {bandIndex === 0 ? (
                   <td className="analysis-student-cell" rowSpan={columnBands.length}>
-                    <strong>{student.firstName} {student.surname}</strong>
-                    <small>{student.schoolId || `${student.grade} ${student.className}`}</small>
+                    <div>
+                      <strong>{student.firstName} {student.surname}</strong>
+                      <small>{student.schoolId || `${student.grade} ${student.className}`}</small>
+                    </div>
                   </td>
                 ) : null}
                 {bandIndex === 0 ? (
@@ -413,7 +430,6 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
                     </select>
                   </td>
                 ) : null}
-                <td className="analysis-band-cell">{bandIndex + 1}</td>
                 {Array.from({ length: bandWidth }, (_, cellIndex) => {
                   const column = band[cellIndex];
                   const questionIndex = columns.indexOf(column);
@@ -453,6 +469,65 @@ function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { column
         </tbody>
       </table>
     </div>
+  );
+}
+
+function getResponsiveQuestionCount(width: number, mode: ExamType) {
+  const studentWidth = mode === "structured" ? 210 : 160;
+  const variantWidth = 68;
+  const scoreWidth = 92;
+  const cellWidth = mode === "structured" ? 58 : 54;
+  const padding = 24;
+  const available = Math.max(cellWidth * 4, width - studentWidth - variantWidth - scoreWidth - padding);
+  return Math.max(4, Math.floor(available / cellWidth));
+}
+
+function PlaceholderAnalysisPanel({ type }: { type: "student" | "question" | "exam" | "topic" | "tag" }) {
+  const titleMap = {
+    student: "Student analysis",
+    question: "Question analysis",
+    exam: "Exam analysis",
+    topic: "Topic analysis",
+    tag: "Tag analysis"
+  };
+  const rows = [
+    { name: type === "student" ? "Student One" : type === "exam" ? "AS Physics MCQ Practice" : "Forces, density and pressure", attempts: 42, score: "68%", trend: "Needs attention" },
+    { name: type === "student" ? "Student Two" : type === "question" ? "9702_w25_qp_12 #15" : "Physical quantities", attempts: 39, score: "74%", trend: "Improving" },
+    { name: type === "tag" ? "uncertainty" : "Dynamics", attempts: 31, score: "81%", trend: "Secure" }
+  ];
+  return (
+    <section className="analysis-panel analysis-placeholder-panel">
+      <header>
+        <h3>{titleMap[type]}</h3>
+        <span>Placeholder data</span>
+      </header>
+      <div className="analysis-placeholder-grid">
+        <div><strong>74%</strong><span>Average performance</span></div>
+        <div><strong>112</strong><span>Recorded attempts</span></div>
+        <div><strong>18</strong><span>Linked questions</span></div>
+        <div><strong>6</strong><span>Classes covered</span></div>
+      </div>
+      <table className="analysis-table">
+        <thead>
+          <tr>
+            <th>{type === "student" ? "Student" : "Item"}</th>
+            <th>Attempts</th>
+            <th>Average</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.name}>
+              <td><strong>{row.name}</strong><small>Dummy data until capture records are saved</small></td>
+              <td>{row.attempts}</td>
+              <td>{row.score}</td>
+              <td>{row.trend}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
