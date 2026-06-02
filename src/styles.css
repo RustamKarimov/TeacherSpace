@@ -3077,9 +3077,16 @@ button {
 
 .mcq-layout-control-row {
   display: grid;
-  grid-template-columns: auto 74px 74px 74px auto auto;
+  grid-template-columns: auto 92px 92px 92px;
   align-items: end;
-  gap: 7px;
+  gap: 8px;
+}
+
+.mcq-layout-align-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 28px;
 }
 
 .mcq-list-tools-row {
@@ -3089,13 +3096,14 @@ button {
   gap: 8px;
 }
 
-.mcq-layout-control-row-secondary {
-  grid-template-columns: auto auto;
+.mcq-layout-letter-row {
+  display: flex;
   align-items: center;
-  justify-content: start;
+  gap: 8px;
+  min-height: 28px;
 }
 
-.mcq-layout-control-row .mcq-icon-toggle-row {
+.mcq-layout-align-row .mcq-icon-toggle-row {
   padding-bottom: 0;
 }
 
@@ -3109,8 +3117,8 @@ button {
 }
 
 .mcq-label-position-glyph {
-  width: 20px;
-  height: 18px;
+  width: 24px;
+  height: 20px;
   display: inline-block;
 }
 
@@ -3197,8 +3205,8 @@ button {
 .mcq-label-position-glyph::after {
   content: "";
   position: absolute;
-  width: 11px;
-  height: 10px;
+  width: 12px;
+  height: 9px;
   border-radius: 2px;
   background:
     linear-gradient(currentColor 0 0) left 1px top 1px / 100% 1px no-repeat,
@@ -3209,32 +3217,32 @@ button {
 
 .mcq-label-position-glyph.is-beside::before {
   left: 0;
-  top: 5px;
+  top: 6px;
 }
 
 .mcq-label-position-glyph.is-beside::after {
   right: 0;
-  top: 4px;
+  top: 5px;
 }
 
 .mcq-label-position-glyph.is-above::before {
   top: 0;
-  left: 6px;
+  left: 8px;
 }
 
 .mcq-label-position-glyph.is-above::after {
   bottom: 0;
-  left: 4px;
+  left: 6px;
 }
 
 .mcq-label-position-glyph.is-below::before {
   bottom: 0;
-  left: 6px;
+  left: 8px;
 }
 
 .mcq-label-position-glyph.is-below::after {
   top: 0;
-  left: 4px;
+  left: 6px;
 }
 
 .mcq-option-source-row {

@@ -534,6 +534,8 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
           <NumberControl label="Label width" value={block.settings.labelWidth} min={18} max={42} onChange={(value) => updateSettings((settings) => ({ ...settings, labelWidth: value }))} />
           <NumberControl label="Option gap" value={block.settings.optionGap} min={0} max={24} onChange={(value) => updateSettings((settings) => ({ ...settings, optionGap: value }))} />
           <NumberControl label="Label gap" value={block.settings.labelContentGap ?? 4} min={0} max={24} onChange={(value) => updateSettings((settings) => ({ ...settings, labelContentGap: value }))} />
+        </div>
+        <div className="mcq-layout-align-row">
           <div className="mcq-icon-toggle-row mcq-alignment-toggle-group">
             <IconToggle active={block.settings.alignment === "left"} label="Align left" onClick={() => setAlignment("left")} icon={<AlignLeft size={15} />} />
             <IconToggle active={block.settings.alignment === "center"} label="Align center" onClick={() => setAlignment("center")} icon={<AlignCenter size={15} />} />
@@ -545,7 +547,7 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
             <IconToggle active={block.settings.verticalAlignment === "bottom"} label="Align options by bottom" onClick={() => setOptionVerticalAlignment("bottom")} icon={<AlignVerticalJustifyEnd size={15} />} />
           </div>
         </div>
-        <div className="mcq-layout-control-row mcq-layout-control-row-secondary">
+        <div className="mcq-layout-letter-row">
           <span className="mcq-mini-label">Letter position</span>
           <div className="mcq-segment-row">
             <SegmentButton active={block.settings.labelPosition === "beside"} compact label="Letter beside option" onClick={() => setLabelPosition("beside")}>
