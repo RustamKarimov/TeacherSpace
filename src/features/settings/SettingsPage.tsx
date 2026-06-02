@@ -142,6 +142,19 @@ export function SettingsPage({ settings, workspace, onSettingsSaved }: Props) {
             <NumberField label="Right mask mm" value={draft.defaults.structuredGenerator.rightMaskMm} onChange={(rightMaskMm) => update((current) => ({ ...current, defaults: { ...current.defaults, structuredGenerator: { ...current.defaults.structuredGenerator, rightMaskMm } } }))} />
           </div>
         </section>
+
+        <section className="settings-card">
+          <header>
+            <strong>Analysis defaults</strong>
+            <span>Used by answer and mark capture screens.</span>
+          </header>
+          <div className="settings-form-grid two">
+            <TextField label="Academic year" value={draft.defaults.analysis.defaultAcademicYear} onChange={(defaultAcademicYear) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, defaultAcademicYear } } }))} />
+            <NumberField label="Questions per answer row" value={draft.defaults.analysis.questionsPerAnswerRow} onChange={(questionsPerAnswerRow) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, questionsPerAnswerRow } } }))} />
+            <TextField label="Default grade" value={draft.defaults.analysis.defaultGrade} onChange={(defaultGrade) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, defaultGrade } } }))} />
+            <TextField label="Default class" value={draft.defaults.analysis.defaultClassName} onChange={(defaultClassName) => update((current) => ({ ...current, defaults: { ...current.defaults, analysis: { ...current.defaults.analysis, defaultClassName } } }))} />
+          </div>
+        </section>
       </div>
 
       {message ? <div className="td-app-notice">{message}</div> : null}

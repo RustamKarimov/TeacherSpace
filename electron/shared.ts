@@ -50,6 +50,7 @@ export interface AppSettings {
       defaultAcademicYear: string;
       defaultGrade: string;
       defaultClassName: string;
+      questionsPerAnswerRow: number;
       difficultyThresholds: {
         veryEasy: number;
         easy: number;

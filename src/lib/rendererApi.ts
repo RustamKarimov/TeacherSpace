@@ -51,6 +51,7 @@ const fallbackSettings: AppSettings = {
       defaultAcademicYear: "2025-2026",
       defaultGrade: "",
       defaultClassName: "",
+      questionsPerAnswerRow: 20,
       difficultyThresholds: {
         veryEasy: 85,
         easy: 70,

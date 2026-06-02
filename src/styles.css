@@ -5662,8 +5662,8 @@ button {
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: 64px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-rows: 52px minmax(0, 1fr);
+  gap: 10px;
   padding: 12px 14px;
   background: #edf2f7;
   overflow: auto;
@@ -5913,23 +5913,146 @@ button {
   align-content: start;
 }
 
-.analysis-entry-header {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr);
-  margin-bottom: 0 !important;
-}
-
-.analysis-entry-controls {
+.analysis-capture-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) 110px 120px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 10px;
+  align-items: start;
 }
 
-.analysis-entry-header p {
-  margin: 6px 0 0;
+.analysis-entry-copy {
+  margin: 0;
   color: #52637a;
   font-size: 12px;
   font-weight: 650;
+}
+
+.analysis-exam-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.analysis-search-field {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid #cfd8e3;
+  border-radius: 5px;
+  padding: 0 8px;
+  background: #fff;
+}
+
+.analysis-search-field input {
+  border: 0;
+  padding: 0;
+}
+
+.analysis-search-field input:focus {
+  outline: 0;
+}
+
+.analysis-exam-card-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.analysis-exam-card-list button {
+  min-width: 0;
+  min-height: 54px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 7px 9px;
+  text-align: left;
+  color: #172033;
+  background: #fff;
+}
+
+.analysis-exam-card-list button.is-active {
+  border-color: #0d6eea;
+  background: #eef6ff;
+  box-shadow: inset 3px 0 0 #0d6eea;
+}
+
+.analysis-exam-card-list strong,
+.analysis-exam-card-list span,
+.analysis-exam-card-list em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-exam-card-list strong {
+  font-size: 12px;
+}
+
+.analysis-exam-card-list span,
+.analysis-exam-card-list em {
+  color: #52637a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.analysis-class-picker {
+  position: relative;
+  display: grid;
+  gap: 4px;
+}
+
+.analysis-class-picker > span {
+  color: #5b6b82;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.analysis-class-picker > button {
+  min-height: 30px;
+  border: 1px solid #cfd8e3;
+  border-radius: 5px;
+  padding: 0 8px;
+  text-align: left;
+  color: #111827;
+  background: #fff;
+  font-weight: 750;
+}
+
+.analysis-class-menu {
+  position: absolute;
+  top: 52px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid #bcd6fb;
+  border-radius: 6px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.16);
+}
+
+.analysis-class-menu button,
+.analysis-class-menu label {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 7px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.analysis-class-menu button:hover,
+.analysis-class-menu label:hover {
+  background: #eef6ff;
 }
 
 .analysis-result-grid-wrap {
@@ -5947,6 +6070,11 @@ button {
   white-space: nowrap;
 }
 
+.analysis-result-grid.is-banded th,
+.analysis-result-grid.is-banded td {
+  min-width: 42px;
+}
+
 .analysis-result-grid th:first-child,
 .analysis-result-grid td:first-child {
   position: sticky;
@@ -5955,6 +6083,16 @@ button {
   min-width: 190px;
   text-align: left;
   background: #fff;
+}
+
+.analysis-result-grid .analysis-variant-cell {
+  min-width: 70px;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.analysis-result-grid .analysis-student-cell {
+  vertical-align: middle;
 }
 
 .analysis-result-grid thead th:first-child {
@@ -5978,6 +6116,29 @@ button {
   font-size: 13px;
   font-weight: 750;
   text-transform: uppercase;
+}
+
+.analysis-result-grid .analysis-mark-cell {
+  width: 40px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.analysis-answer-cell-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.analysis-answer-cell-wrap span {
+  color: #52637a;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
 }
 
 .analysis-result-grid .analysis-mcq-answer-cell:focus {

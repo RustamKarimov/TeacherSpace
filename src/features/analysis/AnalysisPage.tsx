@@ -1,14 +1,24 @@
-import { BarChart3, CheckCircle2, ClipboardCheck, Plus, Save, Trash2, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { BarChart3, CheckCircle2, ClipboardCheck, Plus, Save, Search, Trash2, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { teacherDeskApi } from "../../lib/rendererApi";
 import type { AnalysisOverview, AnalysisStudentRecord, AnalysisStudentSavePayload, AppSettings } from "../../types";
 
 type AnalysisMode = "overview" | "students" | "mcq-entry" | "structured-entry";
+type ExamType = "mcq" | "structured";
 
 type Props = {
   mode: AnalysisMode;
   settings: AppSettings | null;
+};
+
+type ExamCandidate = {
+  id: string;
+  type: ExamType;
+  title: string;
+  detail: string;
+  questionCount: number;
+  variants: string[];
 };
 
 const blankStudent: AnalysisStudentSavePayload = {
@@ -45,6 +55,8 @@ export function AnalysisPage({ mode, settings }: Props) {
 
   const activeStudents = useMemo(() => students.filter((student) => student.status === "Active"), [students]);
   const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? null;
+  const gradeSuggestions = useMemo(() => unique(students.map((student) => student.grade).filter(Boolean)), [students]);
+  const classSuggestions = useMemo(() => unique(students.map((student) => student.className).filter(Boolean)), [students]);
 
   async function load() {
     const [nextOverview, nextStudents] = await Promise.all([
@@ -95,7 +107,6 @@ export function AnalysisPage({ mode, settings }: Props) {
     <div className="analysis-page">
       <header className="analysis-header">
         <div>
-          <span>Analysis</span>
           <h2>{modeTitle(mode)}</h2>
         </div>
         <div className="analysis-header-actions">
@@ -106,17 +117,19 @@ export function AnalysisPage({ mode, settings }: Props) {
       {mode === "overview" ? <OverviewPanel overview={overview} /> : null}
       {mode === "students" ? (
         <StudentsPanel
+          classSuggestions={classSuggestions}
           draft={draft}
-          students={students}
+          gradeSuggestions={gradeSuggestions}
           selectedStudent={selectedStudent}
+          students={students}
           onDraftChange={setDraft}
           onEditStudent={editStudent}
           onRemoveStudent={(id) => void removeStudent(id)}
           onSaveStudent={() => void saveStudent()}
         />
       ) : null}
-      {mode === "mcq-entry" ? <McqEntryPanel students={activeStudents} /> : null}
-      {mode === "structured-entry" ? <StructuredEntryPanel students={activeStudents} /> : null}
+      {mode === "mcq-entry" ? <CapturePanel examType="mcq" settings={settings} students={activeStudents} /> : null}
+      {mode === "structured-entry" ? <CapturePanel examType="structured" settings={settings} students={activeStudents} /> : null}
 
       {message ? <div className="analysis-toast">{message}</div> : null}
     </div>
@@ -157,17 +170,21 @@ function OverviewPanel({ overview }: { overview: AnalysisOverview | null }) {
 }
 
 function StudentsPanel({
+  classSuggestions,
   draft,
-  students,
+  gradeSuggestions,
   selectedStudent,
+  students,
   onDraftChange,
   onEditStudent,
   onRemoveStudent,
   onSaveStudent
 }: {
+  classSuggestions: string[];
   draft: AnalysisStudentSavePayload;
-  students: AnalysisStudentRecord[];
+  gradeSuggestions: string[];
   selectedStudent: AnalysisStudentRecord | null;
+  students: AnalysisStudentRecord[];
   onDraftChange: (draft: AnalysisStudentSavePayload) => void;
   onEditStudent: (student: AnalysisStudentRecord) => void;
   onRemoveStudent: (id: string) => void;
@@ -185,8 +202,8 @@ function StudentsPanel({
           <Field label="Academic year" value={draft.academicYear} onChange={(academicYear) => onDraftChange({ ...draft, academicYear })} />
           <Field label="Name" value={draft.firstName} onChange={(firstName) => onDraftChange({ ...draft, firstName })} />
           <Field label="Surname" value={draft.surname} onChange={(surname) => onDraftChange({ ...draft, surname })} />
-          <Field label="Grade" value={draft.grade} onChange={(grade) => onDraftChange({ ...draft, grade })} />
-          <Field label="Class" value={draft.className} onChange={(className) => onDraftChange({ ...draft, className })} />
+          <SuggestField label="Grade" suggestions={gradeSuggestions} value={draft.grade} onChange={(grade) => onDraftChange({ ...draft, grade })} />
+          <SuggestField label="Class" suggestions={classSuggestions} value={draft.className} onChange={(className) => onDraftChange({ ...draft, className })} />
           <label className="analysis-field">
             <span>Status</span>
             <select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value === "Archived" ? "Archived" : "Active" })}>
@@ -234,108 +251,211 @@ function StudentsPanel({
   );
 }
 
-function McqEntryPanel({ students }: { students: AnalysisStudentRecord[] }) {
-  const questions = Array.from({ length: 40 }, (_, index) => `Q${index + 1}`);
+function CapturePanel({ examType, settings, students }: { examType: ExamType; settings: AppSettings | null; students: AnalysisStudentRecord[] }) {
+  const candidates = useMemo(() => buildExamCandidates(settings), [settings]);
+  const filteredCandidates = candidates.filter((exam) => exam.type === examType);
+  const [selectedExamId, setSelectedExamId] = useState(filteredCandidates[0]?.id ?? "");
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  const [examSearch, setExamSearch] = useState("");
+  const selectedExam = filteredCandidates.find((exam) => exam.id === selectedExamId) ?? filteredCandidates[0] ?? candidates[0];
+  const classOptions = useMemo(() => unique(students.map((student) => student.className).filter(Boolean)), [students]);
+  const roster = useMemo(() => {
+    if (selectedClasses.length === 0) return students;
+    return students.filter((student) => selectedClasses.includes(student.className));
+  }, [selectedClasses, students]);
+  const questionCount = selectedExam?.questionCount ?? (examType === "mcq" ? settings?.defaults.mcqGenerator.questionCount ?? 40 : 5);
+  const questions = Array.from({ length: questionCount }, (_, index) => `Q${index + 1}`);
+  const questionsPerRow = Math.max(6, Math.min(30, settings?.defaults.analysis.questionsPerAnswerRow ?? 20));
+  const copy = examType === "mcq"
+    ? "Select each student's variant, then enter A/B/C/D answers. Cells advance automatically after typing."
+    : "Enter marks per structured question. Use arrow keys, Tab, or Enter to move through the sheet.";
+
+  useEffect(() => {
+    if (!filteredCandidates.some((exam) => exam.id === selectedExamId)) {
+      setSelectedExamId(filteredCandidates[0]?.id ?? "");
+    }
+  }, [examType, filteredCandidates, selectedExamId]);
+
   return (
     <section className="analysis-panel analysis-entry-panel">
-      <EntryHeader copy="Capture A/B/C/D answers against a generated MCQ variant. Auto-marking will use the saved variant answer key snapshot." />
-      <ResultGrid students={students} columns={questions} mode="mcq" />
-    </section>
-  );
-}
-
-function StructuredEntryPanel({ students }: { students: AnalysisStudentRecord[] }) {
-  const questions = ["Q1 /8", "Q2 /7", "Q3 /10", "Q4 /6", "Q5 /9"];
-  return (
-    <section className="analysis-panel analysis-entry-panel">
-      <EntryHeader copy="Capture marks per structured question. Each cell validates against the question maximum before saving attempts." />
-      <ResultGrid students={students} columns={questions} mode="structured" />
-    </section>
-  );
-}
-
-function EntryHeader({ copy }: { copy: string }) {
-  return (
-    <header className="analysis-entry-header">
-      <div className="analysis-entry-controls">
-        <Field label="Exam" value="Select generated exam" onChange={() => undefined} />
-        <Field label="Variant / copy" value="A" onChange={() => undefined} />
-        <Field label="Class" value="12A" onChange={() => undefined} />
+      <div className="analysis-capture-toolbar">
+        <ExamPicker
+          candidates={filteredCandidates}
+          examType={examType}
+          search={examSearch}
+          selectedExamId={selectedExam?.id ?? ""}
+          onSearchChange={setExamSearch}
+          onSelectExam={setSelectedExamId}
+        />
+        <ClassMultiSelect options={classOptions} selected={selectedClasses} onChange={setSelectedClasses} />
       </div>
-      <p>{copy}</p>
-    </header>
+      <p className="analysis-entry-copy">{copy}</p>
+      <ResultGrid
+        columns={questions}
+        exam={selectedExam}
+        mode={examType}
+        questionsPerRow={questionsPerRow}
+        students={roster}
+      />
+    </section>
   );
 }
 
-function ResultGrid({ students, columns, mode }: { students: AnalysisStudentRecord[]; columns: string[]; mode: "mcq" | "structured" }) {
+function ExamPicker({ candidates, examType, search, selectedExamId, onSearchChange, onSelectExam }: {
+  candidates: ExamCandidate[];
+  examType: ExamType;
+  search: string;
+  selectedExamId: string;
+  onSearchChange: (value: string) => void;
+  onSelectExam: (id: string) => void;
+}) {
+  const filtered = candidates.filter((candidate) => `${candidate.title} ${candidate.detail}`.toLowerCase().includes(search.toLowerCase())).slice(0, 6);
+  return (
+    <div className="analysis-exam-picker">
+      <label className="analysis-field">
+        <span>{examType === "mcq" ? "MCQ exam" : "Structured exam"}</span>
+        <div className="analysis-search-field">
+          <Search size={14} />
+          <input placeholder="Search title, paper, date..." value={search} onChange={(event) => onSearchChange(event.target.value)} />
+        </div>
+      </label>
+      <div className="analysis-exam-card-list">
+        {filtered.map((candidate) => (
+          <button className={candidate.id === selectedExamId ? "is-active" : undefined} key={candidate.id} type="button" onClick={() => onSelectExam(candidate.id)}>
+            <strong>{candidate.title}</strong>
+            <span>{candidate.detail}</span>
+            <em>{candidate.questionCount} questions</em>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ClassMultiSelect({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (value: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = selected.length === 0 ? "All classes" : selected.join(", ");
+  return (
+    <div className="analysis-class-picker">
+      <span>Classes</span>
+      <button type="button" onClick={() => setOpen((value) => !value)}>{label}</button>
+      {open ? (
+        <div className="analysis-class-menu">
+          <button type="button" onClick={() => onChange([])}>All</button>
+          {options.map((option) => (
+            <label key={option}>
+              <input
+                checked={selected.includes(option)}
+                type="checkbox"
+                onChange={(event) => onChange(event.target.checked ? [...selected, option] : selected.filter((item) => item !== option))}
+              />
+              {option}
+            </label>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ResultGrid({ columns, exam, mode, questionsPerRow, students }: { columns: string[]; exam?: ExamCandidate; mode: ExamType; questionsPerRow: number; students: AnalysisStudentRecord[] }) {
+  const tableRef = useRef<HTMLTableElement | null>(null);
   const visibleStudents = students.length ? students : [
     { id: "placeholder-1", firstName: "Student", surname: "One", schoolId: "S001", academicYear: "", grade: "12", className: "A", status: "Active", notes: "", createdAt: "", updatedAt: "" },
     { id: "placeholder-2", firstName: "Student", surname: "Two", schoolId: "S002", academicYear: "", grade: "12", className: "A", status: "Active", notes: "", createdAt: "", updatedAt: "" }
   ] satisfies AnalysisStudentRecord[];
+  const columnBands = chunkBalanced(columns, questionsPerRow);
+  const bandWidth = Math.max(...columnBands.map((band) => band.length), 1);
 
-  function focusCell(rowIndex: number, columnIndex: number) {
-    const input = document.querySelector<HTMLInputElement>(`[data-analysis-cell="${rowIndex}:${columnIndex}"]`);
+  function focusCell(studentIndex: number, questionIndex: number) {
+    const input = tableRef.current?.querySelector<HTMLInputElement>(`[data-analysis-cell="${studentIndex}:${questionIndex}"]`);
     input?.focus();
     input?.select();
   }
 
-  function handleMcqCellKeyDown(event: KeyboardEvent<HTMLInputElement>, rowIndex: number, columnIndex: number) {
+  function handleCellKeyDown(event: KeyboardEvent<HTMLInputElement>, studentIndex: number, questionIndex: number) {
     if (event.key === "ArrowRight" || event.key === "Tab" || event.key === "Enter") {
       event.preventDefault();
-      focusCell(rowIndex, Math.min(columns.length - 1, columnIndex + 1));
+      focusCell(studentIndex, Math.min(columns.length - 1, questionIndex + 1));
     }
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      focusCell(rowIndex, Math.max(0, columnIndex - 1));
+      focusCell(studentIndex, Math.max(0, questionIndex - 1));
     }
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      focusCell(Math.min(visibleStudents.length - 1, rowIndex + 1), columnIndex);
+      focusCell(Math.min(visibleStudents.length - 1, studentIndex + 1), questionIndex);
     }
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      focusCell(Math.max(0, rowIndex - 1), columnIndex);
+      focusCell(Math.max(0, studentIndex - 1), questionIndex);
     }
   }
 
   return (
     <div className="analysis-result-grid-wrap">
-      <table className="analysis-result-grid">
+      <table className="analysis-result-grid is-banded" ref={tableRef}>
         <thead>
           <tr>
             <th>Student</th>
-            {columns.map((column) => <th key={column}>{column}</th>)}
+            {mode === "mcq" ? <th>Variant</th> : null}
+            {Array.from({ length: bandWidth }, (_, index) => <th key={`h-${index}`}>Q</th>)}
             <th>Total</th>
             <th>%</th>
           </tr>
         </thead>
         <tbody>
-          {visibleStudents.map((student, rowIndex) => (
-            <tr key={student.id}>
-              <td><strong>{student.firstName} {student.surname}</strong><small>{student.schoolId}</small></td>
-              {columns.map((column, index) => (
-                <td key={column}>
-                  {mode === "mcq" ? (
-                    <input
-                      aria-label={`${student.firstName} ${student.surname} ${column}`}
-                      className="analysis-mcq-answer-cell"
-                      data-analysis-cell={`${rowIndex}:${index}`}
-                      inputMode="text"
-                      maxLength={1}
-                      onChange={(event) => {
-                        const value = event.target.value.toUpperCase().replace(/[^ABCD]/g, "");
-                        event.target.value = value;
-                        if (value && index < columns.length - 1) focusCell(rowIndex, index + 1);
-                      }}
-                      onFocus={(event) => event.currentTarget.select()}
-                      onKeyDown={(event) => handleMcqCellKeyDown(event, rowIndex, index)}
-                    />
-                  ) : <input type="number" min={0} defaultValue={index % 3 === 0 ? "" : Math.min(6, index + 1)} />}
-                </td>
-              ))}
-              <td>--</td>
-              <td>--</td>
-            </tr>
+          {visibleStudents.map((student, studentIndex) => (
+            columnBands.map((band, bandIndex) => (
+              <tr key={`${student.id}-${bandIndex}`}>
+                {bandIndex === 0 ? (
+                  <td className="analysis-student-cell" rowSpan={columnBands.length}>
+                    <strong>{student.firstName} {student.surname}</strong>
+                    <small>{student.schoolId || `${student.grade} ${student.className}`}</small>
+                  </td>
+                ) : null}
+                {mode === "mcq" && bandIndex === 0 ? (
+                  <td className="analysis-variant-cell" rowSpan={columnBands.length}>
+                    <select defaultValue={exam?.variants[0] ?? "A"}>
+                      {(exam?.variants.length ? exam.variants : ["A"]).map((variant) => <option key={variant}>{variant}</option>)}
+                    </select>
+                  </td>
+                ) : null}
+                {Array.from({ length: bandWidth }, (_, cellIndex) => {
+                  const column = band[cellIndex];
+                  const questionIndex = columns.indexOf(column);
+                  return (
+                    <td key={`${student.id}-${column ?? cellIndex}`}>
+                      {column ? (
+                        <label className="analysis-answer-cell-wrap">
+                          <span>{column}</span>
+                          <input
+                            aria-label={`${student.firstName} ${student.surname} ${column}`}
+                            className={mode === "mcq" ? "analysis-mcq-answer-cell" : "analysis-mark-cell"}
+                            data-analysis-cell={`${studentIndex}:${questionIndex}`}
+                            inputMode={mode === "mcq" ? "text" : "decimal"}
+                            maxLength={mode === "mcq" ? 1 : undefined}
+                            min={mode === "structured" ? 0 : undefined}
+                            type={mode === "structured" ? "number" : "text"}
+                            onChange={(event) => {
+                              if (mode === "mcq") {
+                                const value = event.target.value.toUpperCase().replace(/[^ABCD]/g, "");
+                                event.target.value = value;
+                                if (value && questionIndex < columns.length - 1) focusCell(studentIndex, questionIndex + 1);
+                              }
+                            }}
+                            onFocus={(event) => event.currentTarget.select()}
+                            onKeyDown={(event) => handleCellKeyDown(event, studentIndex, questionIndex)}
+                          />
+                        </label>
+                      ) : null}
+                    </td>
+                  );
+                })}
+                {bandIndex === 0 ? <td rowSpan={columnBands.length}>--</td> : null}
+                {bandIndex === 0 ? <td rowSpan={columnBands.length}>--</td> : null}
+              </tr>
+            ))
           ))}
         </tbody>
       </table>
@@ -350,6 +470,66 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
       <input value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
+}
+
+function SuggestField({ label, suggestions, value, onChange }: { label: string; suggestions: string[]; value: string; onChange: (value: string) => void }) {
+  const id = `analysis-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  return (
+    <label className="analysis-field">
+      <span>{label}</span>
+      <input list={id} value={value} onChange={(event) => onChange(event.target.value)} />
+      <datalist id={id}>
+        {suggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+      </datalist>
+    </label>
+  );
+}
+
+function buildExamCandidates(settings: AppSettings | null): ExamCandidate[] {
+  return [
+    {
+      id: "mcq-latest",
+      type: "mcq",
+      title: settings?.defaults.mcqGenerator.title || "AS Physics MCQ Practice",
+      detail: "Latest generated MCQ package",
+      questionCount: settings?.defaults.mcqGenerator.questionCount ?? 40,
+      variants: Array.from({ length: Math.max(1, settings?.defaults.mcqGenerator.variants ?? 1) }, (_, index) => String.fromCharCode(65 + index))
+    },
+    {
+      id: "mcq-paper-1",
+      type: "mcq",
+      title: "Paper 1 classroom practice",
+      detail: "Generated from MCQ question bank",
+      questionCount: 40,
+      variants: ["A", "B"]
+    },
+    {
+      id: "structured-latest",
+      type: "structured",
+      title: settings?.defaults.structuredGenerator.title || "Structured Physics Practice",
+      detail: "Latest structured exam package",
+      questionCount: 5,
+      variants: ["QP"]
+    },
+    {
+      id: "structured-paper-2",
+      type: "structured",
+      title: "Paper 2 timed practice",
+      detail: "Structured question set",
+      questionCount: 7,
+      variants: ["QP"]
+    }
+  ];
+}
+
+function chunkBalanced<T>(items: T[], maxPerRow: number): T[][] {
+  const rowCount = Math.max(1, Math.ceil(items.length / maxPerRow));
+  const perRow = Math.ceil(items.length / rowCount);
+  return Array.from({ length: rowCount }, (_, index) => items.slice(index * perRow, (index + 1) * perRow));
+}
+
+function unique(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
 
 function modeTitle(mode: AnalysisMode) {
