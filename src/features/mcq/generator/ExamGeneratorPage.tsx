@@ -10,7 +10,7 @@ import {
   RotateCw,
   Trash2
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { AppSettings, McqExamGeneratorPayload, McqExamGeneratorResult, McqExamPreviewResult, McqQuestionRecord, StructuredQuestionRecord, WorkspaceInfo } from "../../../types";
 import { teacherDeskApi } from "../../../lib/rendererApi";
@@ -257,6 +257,18 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
     }
   }
 
+  function startNewExam() {
+    setSummary(null);
+    setPreview(null);
+    setPreviewVariant("A");
+    setPreviewCopy("student");
+    setGenerationError("");
+    setProcessLog(["Ready to generate."]);
+    setSelectedTopics([]);
+    setTopicInput("");
+    setTopicRows([{ id: crypto.randomUUID(), topics: [], count: 10, combination: false }]);
+  }
+
   return (
     <div className="mcq-generator-page">
       <main className="mcq-generator-main">
@@ -320,6 +332,7 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
           isPreviewing={isPreviewing}
           outputFolder={outputFolder}
           processLog={processLog}
+          showStartNew={Boolean(summary || preview)}
           summary={summary}
           title={title}
           onChooseOutput={chooseOutputFolder}
@@ -328,6 +341,7 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
           onOpenFolder={openGeneratedFolder}
           onOutputFolderChange={setOutputFolder}
           onTitleChange={setTitle}
+          onStartNew={startNewExam}
         />
         <AvailabilityPanel availability={availability} />
         <PreviewPanel
@@ -516,15 +530,25 @@ function TopicDropdown({
   onSelectTopic: (topic: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLLabelElement | null>(null);
   const filtered = allTopics.filter((topic) => topic.toLowerCase().includes(input.toLowerCase()) && !selectedTopics.includes(topic));
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
+
   return (
-    <label className="mcq-topic-dropdown">
+    <label className="mcq-topic-dropdown" ref={rootRef}>
       {label ? <span>{label}</span> : null}
       <div className="mcq-topic-dropdown-control">
         <input
           placeholder={placeholder}
           value={input}
-          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
           onChange={(event) => {
             onInputChange(event.target.value);
             setOpen(true);
@@ -652,6 +676,7 @@ function OutputPanel({
   isPreviewing,
   outputFolder,
   processLog,
+  showStartNew,
   summary,
   title,
   onChooseOutput,
@@ -659,7 +684,8 @@ function OutputPanel({
   onPreview,
   onOpenFolder,
   onOutputFolderChange,
-  onTitleChange
+  onTitleChange,
+  onStartNew
 }: {
   canGenerate: boolean;
   error: string;
@@ -668,6 +694,7 @@ function OutputPanel({
   isPreviewing: boolean;
   outputFolder: string;
   processLog: string[];
+  showStartNew: boolean;
   summary: GenerationSummary | null;
   title: string;
   onChooseOutput: () => void;
@@ -676,6 +703,7 @@ function OutputPanel({
   onOpenFolder: () => void;
   onOutputFolderChange: (value: string) => void;
   onTitleChange: (value: string) => void;
+  onStartNew: () => void;
 }) {
   return (
     <section className="mcq-generator-output">
@@ -699,6 +727,7 @@ function OutputPanel({
       <div className="mcq-generator-output-actions">
         <button className="mcq-generator-preview-action" disabled={isPreviewing || !canGenerate} type="button" onClick={onPreview}><Eye size={15} /> {isPreviewing ? "Previewing..." : "Generate preview"}</button>
         <button className="mcq-generator-generate" disabled={isGenerating || !canGenerate} type="button" onClick={onGenerate}><RotateCw size={15} /> {isGenerating ? "Generating..." : "Generate package"}</button>
+        {showStartNew ? <button className="mcq-generator-start-new" type="button" onClick={onStartNew}>Start new exam</button> : null}
       </div>
       {!canGenerate ? <div className="mcq-generator-error">Start TeacherDesk with Start TeacherDesk.bat to generate PDFs.</div> : null}
       {error ? <div className="mcq-generator-error">{error}</div> : null}
@@ -812,18 +841,34 @@ function CheckField({ checked, label, onChange }: { checked: boolean; label: str
 }
 
 function buildAvailability({ mode, questionCount, questions, selectedTopics, topicRows, basketQuestions }: { mode: GeneratorMode; questionCount: number; questions: McqQuestionRecord[]; selectedTopics: string[]; topicRows: TopicRow[]; basketQuestions: McqQuestionRecord[] }) {
+  const readyQuestions = questions.filter((question) => question.reviewStatus === "Ready");
   if (mode === "basket") return [`${basketQuestions.length} questions in basket.`, `${basketQuestions.filter((q) => q.reviewStatus === "Ready").length} are marked Ready.`, "Generation will use the manual basket order first."];
   if (mode === "topical-total") {
-    const matches = questions.filter((question) => selectedTopics.length === 0 || selectedTopics.some((topic) => question.topics.includes(topic)));
-    return [`${questionCount} questions requested.`, `${selectedTopics.length} selected topic${selectedTopics.length === 1 ? "" : "s"}.`, `${matches.length} candidate questions found.`];
+    if (selectedTopics.length === 0) return [`${questionCount} questions requested.`, "Select one or more topics to see available candidates before preview."];
+    const matches = readyQuestions.filter((question) => selectedTopics.some((topic) => question.topics.includes(topic)));
+    const split = distributeTotal(questionCount, selectedTopics);
+    const topicLines = selectedTopics.map((topic) => {
+      const available = readyQuestions.filter((question) => question.topics.includes(topic)).length;
+      const requested = split.find((item) => item.topic === topic)?.count ?? 0;
+      return `${topic}: ${available} available / ${requested} requested.`;
+    });
+    return [`${questionCount} questions requested.`, `${matches.length} total ready candidate question${matches.length === 1 ? "" : "s"} found.`, ...topicLines];
   }
   if (mode === "topical-custom") {
     const requested = topicRows.reduce((sum, row) => sum + row.count, 0);
-    const warnings = topicRows.filter((row) => row.combination && row.topics.length > 1 && questions.filter((question) => row.topics.every((topic) => question.topics.includes(topic))).length < row.count).length;
-    return [`${requested} questions requested across ${topicRows.length} rows.`, "Combination rows require every selected topic.", warnings ? `${warnings} row may not have enough candidates.` : "All rows can be checked from the local bank."];
+    const rowLines = topicRows.map((row, index) => {
+      if (row.topics.length === 0) return `Row ${index + 1}: select topic(s) to see availability.`;
+      const candidates = readyQuestions.filter((question) => (
+        row.combination
+          ? row.topics.every((topic) => question.topics.includes(topic))
+          : row.topics.some((topic) => question.topics.includes(topic))
+      ));
+      return `Row ${index + 1}: ${candidates.length} available / ${row.count} requested (${row.combination ? "all selected topics" : "any selected topic"}).`;
+    });
+    return [`${requested} questions requested across ${topicRows.length} row${topicRows.length === 1 ? "" : "s"}.`, ...rowLines];
   }
   const slots = Array.from({ length: questionCount }, (_, index) => String(index + 1));
-  const missing = slots.filter((slot) => !questions.some((question) => question.originalQuestionNumber === slot));
+  const missing = slots.filter((slot) => !readyQuestions.some((question) => question.originalQuestionNumber === slot));
   return [`${questionCount} original question-number slots requested.`, `${Math.max(0, questionCount - missing.length)} slots have at least one candidate.`, missing.length ? `${missing.length} slots currently have no candidate.` : "All slots have candidates."];
 }
 

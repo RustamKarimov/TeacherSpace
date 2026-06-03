@@ -5271,7 +5271,7 @@ button {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) 78px 112px 34px;
   gap: 8px;
-  align-items: start;
+  align-items: end;
 }
 
 .mcq-generator-topic-row-header {
@@ -5295,6 +5295,7 @@ button {
 }
 
 .mcq-generator-row-topic-editor {
+  align-self: end;
   display: grid;
   gap: 7px;
 }
@@ -5318,6 +5319,7 @@ button {
 .mcq-topic-dropdown-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: end;
 }
 
 .mcq-topic-dropdown-control input {
@@ -5395,6 +5397,7 @@ button {
 }
 
 .mcq-generator-row-logic {
+  align-self: end;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5px;
@@ -5411,6 +5414,7 @@ button {
 }
 
 .mcq-generator-row-remove {
+  align-self: end;
   border-color: #f0b4b4;
   color: #d02f2f;
 }
@@ -5644,6 +5648,12 @@ button {
   background: #0d6eea;
 }
 
+.mcq-generator-start-new {
+  color: #334155;
+  border-color: #cfd8e3;
+  background: #fff;
+}
+
 .mcq-generator-error {
   border: 1px solid #fecaca;
   border-radius: 5px;
@@ -5734,6 +5744,16 @@ button {
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.mcq-generator-preview-controls select {
+  appearance: none;
+  padding-right: 28px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
 }
 
 .mcq-generator-copy-toggle {

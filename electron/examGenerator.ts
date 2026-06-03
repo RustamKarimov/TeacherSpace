@@ -135,10 +135,7 @@ async function pdfBufferFromHtml(html: string) {
     `);
     const pdf = await window.webContents.printToPDF({
       printBackground: true,
-      preferCSSPageSize: true,
-      margins: {
-        marginType: "none"
-      }
+      preferCSSPageSize: true
     });
     return pdf;
   } finally {
@@ -215,8 +212,9 @@ function renderDocument(payload: McqExamGeneratorPayload, variantLabel: string, 
 function renderPrintCss(payload: McqExamGeneratorPayload) {
   const questionGap = Math.max(0, payload.settings.questionGap);
   const allowSplit = payload.settings.allowQuestionSplit;
+  const avoidBreak = allowSplit ? "" : "break-inside: avoid-page; page-break-inside: avoid;";
   return `
-    @page { size: A4; margin: 24mm 23mm 18mm 23mm; }
+    @page { size: A4; margin: 30mm 23mm 31mm 23mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -230,15 +228,17 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
       position: fixed;
       left: 23mm;
       right: 23mm;
+      height: 9mm;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 30px;
       color: #475569;
       font-size: 8.5pt;
       align-items: center;
+      line-height: 1.2;
     }
-    .page-header { top: 8mm; }
-    .page-footer { bottom: 7mm; }
+    .page-header { top: 6mm; }
+    .page-footer { bottom: 8mm; }
     .page-header strong, .page-footer strong { text-align: center; color: #0f172a; }
     .page-header span:last-child, .page-footer span:last-child { text-align: right; }
     .page-number::after { content: counter(page); }
@@ -263,22 +263,23 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
       grid-template-columns: 34px minmax(0, 1fr);
       column-gap: ${Math.max(6, payload.settings.questionNumberGap * 2)}px;
       margin-bottom: ${Math.max(0, questionGap * 4)}px;
-      ${allowSplit ? "" : "break-inside: avoid; page-break-inside: avoid;"}
+      ${avoidBreak}
     }
     .question-number { font-weight: 700; min-width: 34px; }
+    .question-body { min-width: 0; ${avoidBreak} }
     .question-body > *:first-child { margin-top: 0; }
-    .text-block { white-space: normal; margin: 0 0 6px; }
+    .text-block { white-space: normal; margin: 0 0 6px; ${avoidBreak} }
     .text-block ul, .text-block ol { margin: 6px 0 6px 19px; padding-left: 15px; }
     .text-block p { margin: 0 0 6px; }
-    .equation-block { margin: 8px 0 10px; text-align: center; }
-    .image-block { margin: 8px 0 10px; }
+    .equation-block { margin: 8px 0 10px; text-align: center; ${avoidBreak} }
+    .image-block { margin: 8px 0 10px; ${avoidBreak} }
     .image-block img, .option img, .cell-image { max-width: 100%; object-fit: contain; }
     .image-inner { display: inline-block; line-height: 0; }
     .image-inner.has-border img, .option-image.has-border img, .cell-image.has-border { border: 0.45pt solid #334155; }
-    .table-block { border-collapse: collapse; color: #111827; line-height: 1.18; margin: 8px auto 10px; }
+    .table-block { border-collapse: collapse; color: #111827; line-height: 1.18; margin: 8px auto 10px; ${avoidBreak} }
     .table-block td, .table-block th { border: 1.2px solid #111827; padding: 4px 6px; min-width: 42px; text-align: center; vertical-align: middle; white-space: pre-wrap; }
     .table-block tr.is-correct-answer td, .table-block tr.is-correct-answer th { background: #eef8f4; }
-    .options { margin-top: 8px; display: grid; gap: 6px; color: #111827; }
+    .options { margin-top: 8px; display: grid; gap: 6px; color: #111827; ${avoidBreak} }
     .options.is-two { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
     .options.is-four { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 12px; align-items: stretch; }
     .option { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; break-inside: avoid; }
