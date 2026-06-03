@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deleteAnalysisStudent, deleteMcqQuestion, deleteStructuredQuestions, getAnalysisOverview, getMcqQuestion, listAnalysisStudents, listMcqQuestions, listStructuredQuestions, runMigrations, saveAnalysisStudent, saveMcqQuestion, updateStructuredQuestionMetadata } from "./database.js";
-import { generateMcqExamPackage } from "./examGenerator.js";
+import { generateMcqExamPackage, previewMcqExamPackage } from "./examGenerator.js";
 import { exportTeacherDeskPackage, importTeacherDeskPackage } from "./importExport.js";
 import { generateStructuredExamPackage, previewStructuredExamPackage } from "./structuredExamGenerator.js";
 import { planStructuredSplit, splitStructuredBatch, validateStructuredManifest } from "./structuredSplitter.js";
@@ -82,6 +82,7 @@ app.whenReady().then(async () => {
     const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
     return deleteMcqQuestion(workspaceInfo.databasePath, id);
   });
+  ipcMain.handle("mcq:preview-exam-package", async (_event, payload) => previewMcqExamPackage(payload));
   ipcMain.handle("mcq:generate-exam-package", async (_event, payload) => generateMcqExamPackage(payload));
   ipcMain.handle("structured:validate-manifest", async (_event, payload) => {
     const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);

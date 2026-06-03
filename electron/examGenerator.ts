@@ -2,7 +2,7 @@ import { BrowserWindow } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import katex from "katex";
-import type { McqExamGeneratorPayload, McqQuestionRecord } from "./shared.js";
+import type { McqExamGeneratorPayload, McqExamPreviewResult, McqQuestionRecord } from "./shared.js";
 import { loadSettings } from "./workspace.js";
 
 type GeneratedQuestion = McqQuestionRecord & {
@@ -14,21 +14,37 @@ type VariantPlan = {
   questions: GeneratedQuestion[];
 };
 
+export async function previewMcqExamPackage(payload: McqExamGeneratorPayload): Promise<McqExamPreviewResult> {
+  const { runQuestionSet, variantPlans } = buildVariantPlans(payload);
+  const variants = [];
+
+  for (const plan of variantPlans) {
+    const studentPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, false));
+    const teacherPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, true));
+    const answerKeyPdf = await pdfBufferFromHtml(renderAnswerKeyHtml(payload, plan));
+    variants.push({
+      label: plan.label,
+      studentDataUrl: `data:application/pdf;base64,${studentPdf.toString("base64")}`,
+      teacherDataUrl: `data:application/pdf;base64,${teacherPdf.toString("base64")}`,
+      answerKeyDataUrl: `data:application/pdf;base64,${answerKeyPdf.toString("base64")}`,
+      answers: answerPayload(plan)
+    });
+  }
+
+  return {
+    seed: payload.seed,
+    selectedQuestions: runQuestionSet,
+    variants
+  };
+}
+
 export async function generateMcqExamPackage(payload: McqExamGeneratorPayload) {
   const safeTitle = sanitizeFileName(payload.title || "Untitled MCQ Exam");
   const folderPath = path.join(payload.outputFolder, safeTitle);
   fs.mkdirSync(folderPath, { recursive: true });
 
-  const variantLabels = Array.from({ length: Math.max(1, payload.variants) }, (_, index) => String.fromCharCode(65 + index));
   const files: string[] = [];
-  const runQuestionSet = selectQuestionsForVariant(payload);
-  const variantPlans: VariantPlan[] = variantLabels.map((label) => ({
-    label,
-    questions: prepareVariantQuestions({
-      ...payload,
-      questions: runQuestionSet
-    })
-  }));
+  const { variantPlans } = buildVariantPlans(payload);
 
   for (const plan of variantPlans) {
     const studentName = `${safeTitle}_student_${plan.label}.pdf`;
@@ -54,13 +70,7 @@ export async function generateMcqExamPackage(payload: McqExamGeneratorPayload) {
         settings: payload.settings,
         variants: variantPlans.map((plan) => ({
           label: plan.label,
-          questions: plan.questions.map((question, index) => ({
-            number: index + 1,
-            id: question.id,
-            examCode: question.examCode,
-            originalQuestionNumber: question.originalQuestionNumber,
-            answer: question.generatedCorrectAnswer
-          }))
+          questions: answerPayload(plan)
         }))
       },
       null,
@@ -72,7 +82,35 @@ export async function generateMcqExamPackage(payload: McqExamGeneratorPayload) {
   return { folderPath, files, seed: payload.seed };
 }
 
+function buildVariantPlans(payload: McqExamGeneratorPayload): { runQuestionSet: McqQuestionRecord[]; variantPlans: VariantPlan[] } {
+  const variantLabels = Array.from({ length: Math.max(1, payload.variants) }, (_, index) => String.fromCharCode(65 + index));
+  const runQuestionSet = selectQuestionsForVariant(payload);
+  const variantPlans = variantLabels.map((label) => ({
+    label,
+    questions: prepareVariantQuestions({
+      ...payload,
+      questions: runQuestionSet
+    })
+  }));
+  return { runQuestionSet, variantPlans };
+}
+
+function answerPayload(plan: VariantPlan) {
+  return plan.questions.map((question, index) => ({
+    number: index + 1,
+    id: question.id,
+    examCode: question.examCode,
+    originalQuestionNumber: question.originalQuestionNumber,
+    answer: question.generatedCorrectAnswer || question.correctAnswer || "-"
+  }));
+}
+
 async function writePdfFromHtml(filePath: string, html: string) {
+  const pdf = await pdfBufferFromHtml(html);
+  fs.writeFileSync(filePath, pdf);
+}
+
+async function pdfBufferFromHtml(html: string) {
   const window = new BrowserWindow({
     show: false,
     width: 900,
@@ -102,7 +140,7 @@ async function writePdfFromHtml(filePath: string, html: string) {
         marginType: "none"
       }
     });
-    fs.writeFileSync(filePath, pdf);
+    return pdf;
   } finally {
     window.destroy();
   }
@@ -178,7 +216,7 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
   const questionGap = Math.max(0, payload.settings.questionGap);
   const allowSplit = payload.settings.allowQuestionSplit;
   return `
-    @page { size: A4; margin: 0; }
+    @page { size: A4; margin: 24mm 23mm 18mm 23mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -190,8 +228,8 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
     }
     .page-header, .page-footer {
       position: fixed;
-      left: 88px;
-      right: 88px;
+      left: 23mm;
+      right: 23mm;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 30px;
@@ -199,8 +237,8 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
       font-size: 8.5pt;
       align-items: center;
     }
-    .page-header { top: 32px; }
-    .page-footer { bottom: 24px; }
+    .page-header { top: 8mm; }
+    .page-footer { bottom: 7mm; }
     .page-header strong, .page-footer strong { text-align: center; color: #0f172a; }
     .page-header span:last-child, .page-footer span:last-child { text-align: right; }
     .page-number::after { content: counter(page); }
@@ -215,10 +253,9 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
     }
     .cover-page h1 { margin: 0 0 8mm; font-size: 20pt; }
     .exam-paper {
-      width: 794px;
-      min-height: 1123px;
-      margin: 0 auto;
-      padding: 96px 88px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
       background: #fff;
     }
     .question {

@@ -11,6 +11,7 @@ const api = {
   listMcqQuestions: () => ipcRenderer.invoke("mcq:list-questions"),
   getMcqQuestion: (id) => ipcRenderer.invoke("mcq:get-question", id),
   deleteMcqQuestion: (id) => ipcRenderer.invoke("mcq:delete-question", id),
+  previewMcqExamPackage: (payload) => ipcRenderer.invoke("mcq:preview-exam-package", payload),
   generateMcqExamPackage: (payload) => ipcRenderer.invoke("mcq:generate-exam-package", payload),
   pickManifestFile: (currentPath) => ipcRenderer.invoke("manifest:pick-file", currentPath),
   validateStructuredManifest: (payload) => ipcRenderer.invoke("structured:validate-manifest", payload),

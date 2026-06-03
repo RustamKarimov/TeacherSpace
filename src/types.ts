@@ -136,6 +136,24 @@ export interface McqExamGeneratorResult {
   seed: string;
 }
 
+export interface McqExamPreviewResult {
+  seed: string;
+  selectedQuestions: McqQuestionRecord[];
+  variants: Array<{
+    label: string;
+    studentDataUrl: string;
+    teacherDataUrl: string;
+    answerKeyDataUrl: string;
+    answers: Array<{
+      number: number;
+      id: string;
+      examCode: string;
+      originalQuestionNumber: string;
+      answer: string;
+    }>;
+  }>;
+}
+
 export type StructuredValidationSeverity = "error" | "warning" | "info";
 
 export interface StructuredValidationIssue {
@@ -409,6 +427,7 @@ export interface TeacherDeskApi {
   listMcqQuestions: () => Promise<McqQuestionRecord[]>;
   getMcqQuestion: (id: string) => Promise<McqQuestionRecord | null>;
   deleteMcqQuestion: (id: string) => Promise<void>;
+  previewMcqExamPackage: (payload: McqExamGeneratorPayload) => Promise<McqExamPreviewResult>;
   generateMcqExamPackage: (payload: McqExamGeneratorPayload) => Promise<McqExamGeneratorResult>;
   pickManifestFile: (currentPath: string) => Promise<string | null>;
   validateStructuredManifest: (input: StructuredSplitterInput) => Promise<StructuredValidationReport>;

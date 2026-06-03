@@ -1,5 +1,7 @@
 import {
   BookOpen,
+  ChevronDown,
+  Eye,
   FileCheck2,
   FileText,
   FolderOpen,
@@ -10,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import type { AppSettings, McqExamGeneratorResult, McqQuestionRecord, StructuredQuestionRecord, WorkspaceInfo } from "../../../types";
+import type { AppSettings, McqExamGeneratorPayload, McqExamGeneratorResult, McqExamPreviewResult, McqQuestionRecord, StructuredQuestionRecord, WorkspaceInfo } from "../../../types";
 import { teacherDeskApi } from "../../../lib/rendererApi";
 
 type GeneratorMode = "full-paper" | "topical-total" | "topical-custom" | "basket";
@@ -67,6 +69,10 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
     footerRight: "{paper}"
   });
   const [summary, setSummary] = useState<GenerationSummary | null>(null);
+  const [preview, setPreview] = useState<McqExamPreviewResult | null>(null);
+  const [previewVariant, setPreviewVariant] = useState("A");
+  const [previewCopy, setPreviewCopy] = useState<"student" | "teacher" | "answerKey">("student");
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   useEffect(() => {
     void teacherDeskApi.listMcqQuestions().then(setQuestions);
@@ -88,6 +94,19 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
     () => buildAvailability({ mode, questionCount, questions, selectedTopics, topicRows, basketQuestions }),
     [basketQuestions, mode, questionCount, questions, selectedTopics, topicRows]
   );
+  const selectedPreviewVariant = preview?.variants.find((variant) => variant.label === previewVariant) ?? preview?.variants[0] ?? null;
+  const previewDataUrl = selectedPreviewVariant
+    ? previewCopy === "teacher"
+      ? selectedPreviewVariant.teacherDataUrl
+      : previewCopy === "answerKey"
+        ? selectedPreviewVariant.answerKeyDataUrl
+        : selectedPreviewVariant.studentDataUrl
+    : "";
+
+  useEffect(() => {
+    setPreview(null);
+    setPreviewVariant("A");
+  }, [mode, questionCount, selectedTopics, topicRows, basketQuestions.length, variants, questionNumberGap, questionGap, allowQuestionSplit, shuffleQuestions, shuffleOptions, headerFooter, title]);
 
   async function chooseOutputFolder() {
     setGenerationError("");
@@ -115,19 +134,81 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
     }
   }
 
-  function addTopicFromInput() {
-    const topic = topicInput.trim();
-    if (!topic || selectedTopics.includes(topic)) return;
-    setSelectedTopics((current) => [...current, topic]);
-    setTopicInput("");
-  }
-
   function addTopicRow() {
     setTopicRows((current) => [...current, { id: crypto.randomUUID(), topics: [], count: 5, combination: false }]);
   }
 
   function updateTopicRow(id: string, patch: Partial<TopicRow>) {
     setTopicRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
+
+  function buildPayload(seed: string = crypto.randomUUID(), exactQuestions?: McqQuestionRecord[]): McqExamGeneratorPayload {
+    const selectedQuestions = exactQuestions ?? selectQuestionsForMode({ mode, questionCount, questions, selectedTopics, topicRows, basketQuestions });
+    const questionPool = exactQuestions
+      ? selectedQuestions
+      : mode === "basket"
+        ? selectedQuestions
+        : questions;
+    return {
+      title,
+      outputFolder,
+      seed,
+      mode,
+      variants,
+      selection: exactQuestions
+        ? {
+          mode: "basket",
+          questionCount: selectedQuestions.length,
+          selectedTopics: [],
+          topicRows: [],
+          basketIds: selectedQuestions.map((question) => question.id)
+        }
+        : {
+          mode,
+          questionCount,
+          selectedTopics,
+          topicRows: topicRows.map((row) => ({ topics: row.topics, count: row.count, combination: row.combination })),
+          basketIds
+        },
+      headerFooter,
+      settings: {
+        includeCover,
+        coverPageName,
+        questionNumberGap,
+        questionGap,
+        allowQuestionSplit,
+        shuffleQuestions,
+        shuffleOptions
+      },
+      questions: questionPool
+    };
+  }
+
+  async function generatePreview() {
+    setGenerationError("");
+    setSummary(null);
+    setIsPreviewing(true);
+    const seed = crypto.randomUUID();
+    try {
+      if (!hasDesktopBridge) {
+        throw new Error("MCQ preview requires the TeacherDesk desktop app. Start TeacherDesk with Start TeacherDesk.bat.");
+      }
+      const selectedQuestions = selectQuestionsForMode({ mode, questionCount, questions, selectedTopics, topicRows, basketQuestions });
+      if (selectedQuestions.length === 0) {
+        throw new Error("No questions match this preview setup. Add questions, select topics, or add questions to the basket first.");
+      }
+      setProcessLog([`Building preview from ${selectedQuestions.length} selected questions...`, "Rendering student, teacher, and answer key previews."]);
+      const nextPreview = await teacherDeskApi.previewMcqExamPackage(buildPayload(seed));
+      setPreview(nextPreview);
+      setPreviewVariant(nextPreview.variants[0]?.label ?? "A");
+      setProcessLog((current) => [`Preview ready: ${nextPreview.selectedQuestions.length} questions, ${nextPreview.variants.length} variant${nextPreview.variants.length === 1 ? "" : "s"}.`, ...current]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Preview failed.";
+      setGenerationError(message);
+      setProcessLog((current) => [`Preview error: ${message}`, ...current]);
+    } finally {
+      setIsPreviewing(false);
+    }
   }
 
   async function generatePackage() {
@@ -139,39 +220,14 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
       if (!hasDesktopBridge) {
         throw new Error("PDF generation requires the TeacherDesk desktop app. Start TeacherDesk with Start TeacherDesk.bat so images, tables, and LaTeX are rendered correctly.");
       }
-      setProcessLog(["Preparing question selection...", "Creating a new random seed for this run."]);
-      const selectedQuestions = selectQuestionsForMode({ mode, questionCount, questions, selectedTopics, topicRows, basketQuestions });
+      setProcessLog(["Preparing question selection...", preview ? "Using the current preview question set." : "Creating a new random seed for this run."]);
+      const selectedQuestions = preview?.selectedQuestions.length ? preview.selectedQuestions : selectQuestionsForMode({ mode, questionCount, questions, selectedTopics, topicRows, basketQuestions });
       if (selectedQuestions.length === 0) {
         throw new Error("No questions match this generator setup. Add questions, select topics, or add questions to the basket first.");
       }
       setProcessLog((current) => [`Selected ${selectedQuestions.length} question${selectedQuestions.length === 1 ? "" : "s"}.`, ...current]);
       setProcessLog((current) => ["Sending package to local PDF writer...", ...current]);
-      const questionPool = mode === "basket" ? selectedQuestions : questions;
-      const result: McqExamGeneratorResult = await teacherDeskApi.generateMcqExamPackage({
-        title,
-        outputFolder,
-        seed,
-        mode,
-        variants,
-        selection: {
-          mode,
-          questionCount,
-          selectedTopics,
-          topicRows: topicRows.map((row) => ({ topics: row.topics, count: row.count, combination: row.combination })),
-          basketIds
-        },
-        headerFooter,
-        settings: {
-          includeCover,
-          coverPageName,
-          questionNumberGap,
-          questionGap,
-          allowQuestionSplit,
-          shuffleQuestions,
-          shuffleOptions
-        },
-        questions: questionPool
-      });
+      const result: McqExamGeneratorResult = await teacherDeskApi.generateMcqExamPackage(buildPayload(preview?.seed ?? seed, preview?.selectedQuestions));
       setSummary({
         seed: result.seed,
         titleFolder: result.folderPath,
@@ -221,7 +277,6 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
               questionCount={questionCount}
               selectedTopics={selectedTopics}
               topicInput={topicInput}
-              onAddTopic={addTopicFromInput}
               onQuestionCountChange={setQuestionCount}
               onRemoveTopic={(topic) => setSelectedTopics((current) => current.filter((item) => item !== topic))}
               onSelectedTopicsChange={setSelectedTopics}
@@ -262,18 +317,30 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
           error={generationError}
           isGenerating={isGenerating}
           isPickingFolder={isPickingFolder}
+          isPreviewing={isPreviewing}
           outputFolder={outputFolder}
           processLog={processLog}
           summary={summary}
           title={title}
           onChooseOutput={chooseOutputFolder}
           onGenerate={generatePackage}
+          onPreview={generatePreview}
           onOpenFolder={openGeneratedFolder}
           onOutputFolderChange={setOutputFolder}
           onTitleChange={setTitle}
         />
         <AvailabilityPanel availability={availability} />
-        <PreviewPanel title={title} variants={variants} />
+        <PreviewPanel
+          copy={previewCopy}
+          dataUrl={previewDataUrl}
+          isPreviewing={isPreviewing}
+          selectedVariant={selectedPreviewVariant?.label ?? previewVariant}
+          title={title}
+          variants={preview?.variants.map((variant) => variant.label) ?? Array.from({ length: Math.max(1, variants) }, (_, index) => String.fromCharCode(65 + index))}
+          onCopyChange={setPreviewCopy}
+          onGeneratePreview={generatePreview}
+          onVariantChange={setPreviewVariant}
+        />
         {summary ? <GenerationSummaryPanel summary={summary} /> : null}
       </aside>
     </div>
@@ -305,7 +372,6 @@ function TopicalTotalMode({
   questionCount,
   selectedTopics,
   topicInput,
-  onAddTopic,
   onQuestionCountChange,
   onRemoveTopic,
   onSelectedTopicsChange,
@@ -315,7 +381,6 @@ function TopicalTotalMode({
   questionCount: number;
   selectedTopics: string[];
   topicInput: string;
-  onAddTopic: () => void;
   onQuestionCountChange: (value: number) => void;
   onRemoveTopic: (topic: string) => void;
   onSelectedTopicsChange: (topics: string[]) => void;
@@ -326,22 +391,23 @@ function TopicalTotalMode({
 
   return (
     <Panel title="Topical Total Number" subtitle="Choose topics and a total count; TeacherDesk balances the paper approximately evenly.">
-      <div className="mcq-generator-grid-3">
-        <NumberField label="Total questions" max={80} min={1} value={questionCount} onChange={onQuestionCountChange} />
-        <TextField label="Distribution" readonly value={selectedTopics.length ? "Approximately equal" : "Add topics first"} />
-        <TextField label="Topic logic" readonly value="Any selected topic" />
+      <div className="mcq-generator-topical-total-row">
+        <TopicDropdown
+          allTopics={allTopics}
+          input={topicInput}
+          label="Topics"
+          placeholder="Search topics"
+          selectedTopics={selectedTopics}
+          onInputChange={onTopicInputChange}
+          onSelectTopic={(topic) => {
+            onSelectedTopicsChange([...selectedTopics, topic]);
+            onTopicInputChange("");
+          }}
+        />
+        <NumberField className="is-narrow" label="Total questions" max={80} min={1} value={questionCount} onChange={onQuestionCountChange} />
+        <TextField className="is-compact" label="Distribution" readonly value={selectedTopics.length ? "Approximately equal" : "Add topics first"} />
       </div>
       <div className="mcq-generator-topic-picker">
-        <label>
-          <span>Add topic</span>
-          <div>
-            <input list="mcq-generator-topic-suggestions" placeholder="Type or choose topic" value={topicInput} onChange={(event) => onTopicInputChange(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") onAddTopic(); }} />
-            <button type="button" onClick={onAddTopic}><Plus size={14} /> Add topic</button>
-          </div>
-        </label>
-        <datalist id="mcq-generator-topic-suggestions">
-          {filtered.map((topic) => <option key={topic} value={topic} />)}
-        </datalist>
         <div className="mcq-generator-token-row">
           {selectedTopics.map((topic) => (
             <button key={topic} type="button" onClick={() => onRemoveTopic(topic)}>{topic}<Trash2 size={12} /></button>
@@ -359,7 +425,10 @@ function TopicalTotalMode({
       </div>
       <div className="mcq-generator-quick-topics">
         {filtered.slice(0, 8).map((topic) => (
-          <button key={topic} type="button" onClick={() => onSelectedTopicsChange([...selectedTopics, topic])}>{topic}</button>
+          <button key={topic} type="button" onClick={() => {
+            onSelectedTopicsChange([...selectedTopics, topic]);
+            onTopicInputChange("");
+          }}>{topic}</button>
         ))}
       </div>
     </Panel>
@@ -393,15 +462,6 @@ function TopicalCustomMode({ allTopics, rows, onAddRow, onRemoveRow, onUpdateRow
 
 function TopicRequestRow({ allTopics, row, onRemove, onUpdate }: { allTopics: string[]; row: TopicRow; onRemove: () => void; onUpdate: (patch: Partial<TopicRow>) => void }) {
   const [input, setInput] = useState("");
-  const filtered = allTopics.filter((topic) => topic.toLowerCase().includes(input.toLowerCase()) && !row.topics.includes(topic));
-  const suggestionsId = `mcq-generator-topic-row-${row.id}`;
-
-  function addTopic() {
-    const topic = input.trim();
-    if (!topic || row.topics.includes(topic)) return;
-    onUpdate({ topics: [...row.topics, topic] });
-    setInput("");
-  }
 
   return (
     <div className="mcq-generator-topic-row">
@@ -415,21 +475,18 @@ function TopicRequestRow({ allTopics, row, onRemove, onUpdate }: { allTopics: st
           ))}
           {row.topics.length === 0 ? <span>No topic selected for this row.</span> : null}
         </div>
-        <div className="mcq-generator-row-topic-add">
-          <input
-            list={suggestionsId}
-            placeholder="Search or create topic"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") addTopic();
-            }}
-          />
-          <button type="button" onClick={addTopic}><Plus size={14} /> Add</button>
-        </div>
-        <datalist id={suggestionsId}>
-          {filtered.map((topic) => <option key={topic} value={topic} />)}
-        </datalist>
+        <TopicDropdown
+          allTopics={allTopics}
+          input={input}
+          label=""
+          placeholder="Search topics"
+          selectedTopics={row.topics}
+          onInputChange={setInput}
+          onSelectTopic={(topic) => {
+            onUpdate({ topics: [...row.topics, topic] });
+            setInput("");
+          }}
+        />
       </div>
       <input min={1} max={80} type="number" value={row.count} onChange={(event) => onUpdate({ count: Number(event.target.value) })} />
       <div className="mcq-generator-row-logic" role="group" aria-label="Topic row logic">
@@ -438,6 +495,67 @@ function TopicRequestRow({ allTopics, row, onRemove, onUpdate }: { allTopics: st
       </div>
       <button className="mcq-generator-row-remove" type="button" onClick={onRemove}><Trash2 size={14} /></button>
     </div>
+  );
+}
+
+function TopicDropdown({
+  allTopics,
+  input,
+  label,
+  placeholder,
+  selectedTopics,
+  onInputChange,
+  onSelectTopic
+}: {
+  allTopics: string[];
+  input: string;
+  label: string;
+  placeholder: string;
+  selectedTopics: string[];
+  onInputChange: (value: string) => void;
+  onSelectTopic: (topic: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const filtered = allTopics.filter((topic) => topic.toLowerCase().includes(input.toLowerCase()) && !selectedTopics.includes(topic));
+  return (
+    <label className="mcq-topic-dropdown">
+      {label ? <span>{label}</span> : null}
+      <div className="mcq-topic-dropdown-control">
+        <input
+          placeholder={placeholder}
+          value={input}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onChange={(event) => {
+            onInputChange(event.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && filtered[0]) {
+              event.preventDefault();
+              onSelectTopic(filtered[0]);
+              setOpen(false);
+            }
+          }}
+        />
+        <button aria-label="Show topics" type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => setOpen((value) => !value)}>
+          <ChevronDown size={14} />
+        </button>
+      </div>
+      {open ? (
+        <div className="mcq-topic-dropdown-menu">
+          {filtered.slice(0, 12).map((topic) => (
+            <button key={topic} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => {
+              onSelectTopic(topic);
+              setOpen(false);
+            }}>
+              {topic}
+            </button>
+          ))}
+          {filtered.length === 0 ? <span>No matching topics.</span> : null}
+        </div>
+      ) : null}
+    </label>
   );
 }
 
@@ -531,12 +649,14 @@ function OutputPanel({
   error,
   isGenerating,
   isPickingFolder,
+  isPreviewing,
   outputFolder,
   processLog,
   summary,
   title,
   onChooseOutput,
   onGenerate,
+  onPreview,
   onOpenFolder,
   onOutputFolderChange,
   onTitleChange
@@ -545,12 +665,14 @@ function OutputPanel({
   error: string;
   isGenerating: boolean;
   isPickingFolder: boolean;
+  isPreviewing: boolean;
   outputFolder: string;
   processLog: string[];
   summary: GenerationSummary | null;
   title: string;
   onChooseOutput: () => void;
   onGenerate: () => void;
+  onPreview: () => void;
   onOpenFolder: () => void;
   onOutputFolderChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -574,7 +696,10 @@ function OutputPanel({
           <button disabled={!summary} type="button" onClick={onOpenFolder}><FolderOpen size={14} /> Open folder</button>
         </div>
       </div>
-      <button className="mcq-generator-generate" disabled={isGenerating || !canGenerate} type="button" onClick={onGenerate}><RotateCw size={15} /> {isGenerating ? "Generating..." : "Generate package"}</button>
+      <div className="mcq-generator-output-actions">
+        <button className="mcq-generator-preview-action" disabled={isPreviewing || !canGenerate} type="button" onClick={onPreview}><Eye size={15} /> {isPreviewing ? "Previewing..." : "Generate preview"}</button>
+        <button className="mcq-generator-generate" disabled={isGenerating || !canGenerate} type="button" onClick={onGenerate}><RotateCw size={15} /> {isGenerating ? "Generating..." : "Generate package"}</button>
+      </div>
       {!canGenerate ? <div className="mcq-generator-error">Start TeacherDesk with Start TeacherDesk.bat to generate PDFs.</div> : null}
       {error ? <div className="mcq-generator-error">{error}</div> : null}
       <div className="mcq-generator-process">
@@ -594,24 +719,53 @@ function AvailabilityPanel({ availability }: { availability: string[] }) {
   );
 }
 
-function PreviewPanel({ title, variants }: { title: string; variants: number }) {
+function PreviewPanel({
+  copy,
+  dataUrl,
+  isPreviewing,
+  selectedVariant,
+  title,
+  variants,
+  onCopyChange,
+  onGeneratePreview,
+  onVariantChange
+}: {
+  copy: "student" | "teacher" | "answerKey";
+  dataUrl: string;
+  isPreviewing: boolean;
+  selectedVariant: string;
+  title: string;
+  variants: string[];
+  onCopyChange: (copy: "student" | "teacher" | "answerKey") => void;
+  onGeneratePreview: () => void;
+  onVariantChange: (variant: string) => void;
+}) {
   return (
     <section className="mcq-generator-preview">
-      <h2>Live Structure Preview</h2>
-      <div className="mcq-generator-a4-mini">
-        <header>{title || "Untitled Exam"} - Variant A</header>
-        <main>
-          <strong>1</strong>
-          <p>The first generated question appears here using the shared MCQ renderer.</p>
-          <ol type="A">
-            <li>Option text</li>
-            <li>Option text</li>
-            <li>Option text</li>
-            <li>Option text</li>
-          </ol>
-        </main>
-        <footer>Page 1 of 1 - {variants} variant{variants === 1 ? "" : "s"}</footer>
+      <header className="mcq-generator-preview-header">
+        <h2>Live PDF Preview</h2>
+        <button type="button" onClick={onGeneratePreview} disabled={isPreviewing}><Eye size={14} /> {isPreviewing ? "Rendering..." : "Generate preview"}</button>
+      </header>
+      <div className="mcq-generator-preview-controls">
+        <label>
+          <span>Variant</span>
+          <select value={selectedVariant} onChange={(event) => onVariantChange(event.target.value)}>
+            {variants.map((variant) => <option key={variant}>{variant}</option>)}
+          </select>
+        </label>
+        <div className="mcq-generator-copy-toggle">
+          <button className={copy === "student" ? "is-active" : undefined} type="button" onClick={() => onCopyChange("student")}>Student</button>
+          <button className={copy === "teacher" ? "is-active" : undefined} type="button" onClick={() => onCopyChange("teacher")}>Teacher</button>
+          <button className={copy === "answerKey" ? "is-active" : undefined} type="button" onClick={() => onCopyChange("answerKey")}>Key</button>
+        </div>
       </div>
+      {dataUrl ? (
+        <iframe title={`${title || "MCQ exam"} preview`} src={dataUrl} />
+      ) : (
+        <div className="mcq-generator-preview-empty">
+          Generate preview to inspect the exact A4 PDF before creating files.
+        </div>
+      )}
     </section>
   );
 }
@@ -645,12 +799,12 @@ function ModeButton({ active, icon, label, onClick }: { active: boolean; icon: R
   return <button className={active ? "is-active" : undefined} type="button" onClick={onClick}>{icon}{label}</button>;
 }
 
-function TextField({ label, readonly, value, onChange }: { label: string; readonly?: boolean; value: string; onChange?: (value: string) => void }) {
-  return <label className="mcq-generator-field"><span>{label}</span><input readOnly={readonly} value={value} onChange={(event) => onChange?.(event.target.value)} /></label>;
+function TextField({ className = "", label, readonly, value, onChange }: { className?: string; label: string; readonly?: boolean; value: string; onChange?: (value: string) => void }) {
+  return <label className={`mcq-generator-field ${className}`}><span>{label}</span><input readOnly={readonly} value={value} onChange={(event) => onChange?.(event.target.value)} /></label>;
 }
 
-function NumberField({ label, max, min, value, onChange }: { label: string; max: number; min: number; value: number; onChange: (value: number) => void }) {
-  return <label className="mcq-generator-field"><span>{label}</span><input max={max} min={min} type="number" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
+function NumberField({ className = "", label, max, min, value, onChange }: { className?: string; label: string; max: number; min: number; value: number; onChange: (value: number) => void }) {
+  return <label className={`mcq-generator-field ${className}`}><span>{label}</span><input max={max} min={min} type="number" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }
 
 function CheckField({ checked, label, onChange }: { checked: boolean; label: string; onChange?: (value: boolean) => void }) {
