@@ -14,14 +14,20 @@ type VariantPlan = {
   questions: GeneratedQuestion[];
 };
 
+type PdfHeaderFooterOptions = {
+  payload: McqExamGeneratorPayload;
+  variantLabel: string;
+  copyLabel: string;
+};
+
 export async function previewMcqExamPackage(payload: McqExamGeneratorPayload): Promise<McqExamPreviewResult> {
   const { runQuestionSet, variantPlans } = buildVariantPlans(payload);
   const variants = [];
 
   for (const plan of variantPlans) {
-    const studentPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, false));
-    const teacherPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, true));
-    const answerKeyPdf = await pdfBufferFromHtml(renderAnswerKeyHtml(payload, plan));
+    const studentPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, false), { payload, variantLabel: plan.label, copyLabel: "Student copy" });
+    const teacherPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, true), { payload, variantLabel: plan.label, copyLabel: "Teacher copy" });
+    const answerKeyPdf = await pdfBufferFromHtml(renderAnswerKeyHtml(payload, plan), { payload, variantLabel: plan.label, copyLabel: "Answer key" });
     variants.push({
       label: plan.label,
       studentDataUrl: `data:application/pdf;base64,${studentPdf.toString("base64")}`,
@@ -51,9 +57,9 @@ export async function generateMcqExamPackage(payload: McqExamGeneratorPayload) {
     const teacherName = `${safeTitle}_teacher_${plan.label}.pdf`;
     const answerKeyName = `${safeTitle}_answer_key_${plan.label}.pdf`;
 
-    await writePdfFromHtml(path.join(folderPath, studentName), renderExamHtml(payload, plan, false));
-    await writePdfFromHtml(path.join(folderPath, teacherName), renderExamHtml(payload, plan, true));
-    await writePdfFromHtml(path.join(folderPath, answerKeyName), renderAnswerKeyHtml(payload, plan));
+    await writePdfFromHtml(path.join(folderPath, studentName), renderExamHtml(payload, plan, false), { payload, variantLabel: plan.label, copyLabel: "Student copy" });
+    await writePdfFromHtml(path.join(folderPath, teacherName), renderExamHtml(payload, plan, true), { payload, variantLabel: plan.label, copyLabel: "Teacher copy" });
+    await writePdfFromHtml(path.join(folderPath, answerKeyName), renderAnswerKeyHtml(payload, plan), { payload, variantLabel: plan.label, copyLabel: "Answer key" });
     files.push(studentName, teacherName, answerKeyName);
   }
 
@@ -105,12 +111,12 @@ function answerPayload(plan: VariantPlan) {
   }));
 }
 
-async function writePdfFromHtml(filePath: string, html: string) {
-  const pdf = await pdfBufferFromHtml(html);
+async function writePdfFromHtml(filePath: string, html: string, options: PdfHeaderFooterOptions) {
+  const pdf = await pdfBufferFromHtml(html, options);
   fs.writeFileSync(filePath, pdf);
 }
 
-async function pdfBufferFromHtml(html: string) {
+async function pdfBufferFromHtml(html: string, options: PdfHeaderFooterOptions) {
   const window = new BrowserWindow({
     show: false,
     width: 900,
@@ -134,8 +140,18 @@ async function pdfBufferFromHtml(html: string) {
       ])
     `);
     const pdf = await window.webContents.printToPDF({
+      displayHeaderFooter: true,
+      headerTemplate: renderPrintHeaderTemplate(options.payload, options.variantLabel),
+      footerTemplate: renderPrintFooterTemplate(options.payload, options.variantLabel, options.copyLabel),
+      pageSize: "A4",
+      margins: {
+        top: 0.5,
+        bottom: 0.5,
+        left: 0.35,
+        right: 0.35
+      },
       printBackground: true,
-      preferCSSPageSize: true
+      preferCSSPageSize: false
     });
     return pdf;
   } finally {
@@ -185,6 +201,8 @@ function renderAnswerKeyHtml(payload: McqExamGeneratorPayload, plan: VariantPlan
 
 function renderDocument(payload: McqExamGeneratorPayload, variantLabel: string, copyLabel: string, body: string) {
   const katexCss = readKatexCss();
+  void variantLabel;
+  void copyLabel;
   return `<!doctype html>
   <html>
     <head>
@@ -194,17 +212,7 @@ function renderDocument(payload: McqExamGeneratorPayload, variantLabel: string, 
       <style>${renderPrintCss(payload)}</style>
     </head>
     <body>
-      <header class="page-header">
-        <span>${renderFieldHtml(payload.headerFooter.headerLeft, payload, variantLabel)}</span>
-        <strong>${renderFieldHtml(payload.headerFooter.headerCenter || payload.title, payload, variantLabel)}</strong>
-        <span>${renderFieldHtml(payload.headerFooter.headerRight, payload, variantLabel)}</span>
-      </header>
       ${body}
-      <footer class="page-footer">
-        <span>${renderFieldHtml(payload.headerFooter.footerLeft, payload, variantLabel)}</span>
-        <strong>${escapeHtml(copyLabel)}</strong>
-        <span>${renderFieldHtml(payload.headerFooter.footerRight, payload, variantLabel)}</span>
-      </footer>
     </body>
   </html>`;
 }
@@ -214,7 +222,7 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
   const allowSplit = payload.settings.allowQuestionSplit;
   const avoidBreak = allowSplit ? "" : "break-inside: avoid-page; page-break-inside: avoid;";
   return `
-    @page { size: A4; margin: 24mm 23mm 24mm 23mm; }
+    @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -224,25 +232,6 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
       font-size: 11pt;
       line-height: 1.25;
     }
-    .page-header, .page-footer {
-      position: fixed;
-      left: 23mm;
-      right: 23mm;
-      height: 9mm;
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 30px;
-      color: #475569;
-      font-size: 8.5pt;
-      align-items: center;
-      line-height: 1.2;
-    }
-    .page-header { top: -17mm; }
-    .page-footer { bottom: -16mm; }
-    .page-header strong, .page-footer strong { text-align: center; color: #0f172a; }
-    .page-header span:last-child, .page-footer span:last-child { text-align: right; }
-    .page-number::after { content: counter(page); }
-    .page-count::after { content: counter(pages); }
     .cover-page {
       min-height: 250mm;
       display: grid;
@@ -318,6 +307,33 @@ function renderCoverPage(payload: McqExamGeneratorPayload, variantLabel: string,
     <p>${escapeHtml(copyLabel)} - Variant ${escapeHtml(variantLabel)}</p>
     ${payload.settings.coverPageName ? `<p>Cover source: ${escapeHtml(payload.settings.coverPageName)}</p>` : ""}
   </section>`;
+}
+
+function renderPrintHeaderTemplate(payload: McqExamGeneratorPayload, variantLabel: string) {
+  return renderPrintTemplateRow(
+    renderHeaderFooterField(payload.headerFooter.headerLeft, payload, variantLabel),
+    renderHeaderFooterField(payload.headerFooter.headerCenter || payload.title, payload, variantLabel),
+    renderHeaderFooterField(payload.headerFooter.headerRight, payload, variantLabel),
+    "header"
+  );
+}
+
+function renderPrintFooterTemplate(payload: McqExamGeneratorPayload, variantLabel: string, copyLabel: string) {
+  return renderPrintTemplateRow(
+    renderHeaderFooterField(payload.headerFooter.footerLeft, payload, variantLabel),
+    renderHeaderFooterField(payload.headerFooter.footerCenter || copyLabel, payload, variantLabel).replaceAll("{copy}", escapeHtml(copyLabel)),
+    renderHeaderFooterField(payload.headerFooter.footerRight, payload, variantLabel),
+    "footer"
+  );
+}
+
+function renderPrintTemplateRow(left: string, center: string, right: string, placement: "header" | "footer") {
+  const align = placement === "header" ? "flex-start" : "flex-end";
+  return `<div style="width:100%;padding:0 0.35in;box-sizing:border-box;font-family:Calibri,Arial,sans-serif;font-size:8px;color:#475569;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:${align};line-height:1.2;">
+    <span style="text-align:left;">${left}</span>
+    <span style="text-align:center;font-weight:700;color:#0f172a;">${center}</span>
+    <span style="text-align:right;">${right}</span>
+  </div>`;
 }
 
 function renderQuestion(question: GeneratedQuestion, questionNumber: number, teacherCopy: boolean, _numberGap: number, _questionGap: number) {
@@ -693,12 +709,7 @@ function selectQuestionsForVariant(payload: McqExamGeneratorPayload) {
 
   if (selection.mode === "topical-total") {
     if (selection.selectedTopics.length === 0) return [];
-    const selected: McqQuestionRecord[] = [];
-    for (const item of distributeTotal(selection.questionCount, selection.selectedTopics)) {
-      const candidates = readyQuestions.filter((question) => question.topics.includes(item.topic));
-      selected.push(...takeRandom(candidates.filter((question) => !selected.some((picked) => picked.id === question.id)), item.count));
-    }
-    return selected.slice(0, selection.questionCount);
+    return planTopicalTotalQuestions(readyQuestions, selection.selectedTopics, selection.questionCount).slice(0, selection.questionCount);
   }
 
   const selected: McqQuestionRecord[] = [];
@@ -720,6 +731,30 @@ function distributeTotal(total: number, topics: string[]) {
     remainder -= 1;
     return { topic, count };
   });
+}
+
+function planTopicalTotalQuestions(questions: McqQuestionRecord[], topics: string[], total: number) {
+  const selected: McqQuestionRecord[] = [];
+  for (const item of distributeTotal(total, topics)) {
+    const candidates = questions
+      .filter((question) => question.topics.includes(item.topic) && !selected.some((picked) => picked.id === question.id))
+      .sort((first, second) => topicOverlapCount(first, topics) - topicOverlapCount(second, topics));
+    selected.push(...shuffleByOverlapGroups(candidates, topics).slice(0, item.count));
+  }
+  return selected;
+}
+
+function topicOverlapCount(question: McqQuestionRecord, topics: string[]) {
+  return topics.filter((topic) => question.topics.includes(topic)).length;
+}
+
+function shuffleByOverlapGroups(questions: McqQuestionRecord[], topics: string[]) {
+  const groups = new Map<number, McqQuestionRecord[]>();
+  for (const question of questions) {
+    const overlap = topicOverlapCount(question, topics);
+    groups.set(overlap, [...(groups.get(overlap) ?? []), question]);
+  }
+  return Array.from(groups.keys()).sort((a, b) => a - b).flatMap((key) => shuffle(groups.get(key) ?? []));
 }
 
 function takeRandom<T>(items: T[], count: number) {
@@ -744,6 +779,12 @@ function renderFieldHtml(template: string | undefined, payload: McqExamGenerator
   return escapeHtml(renderField(template, payload, variantLabel))
     .replaceAll("{page}", '<span class="page-number"></span>')
     .replaceAll("{pages}", '<span class="page-count"></span>');
+}
+
+function renderHeaderFooterField(template: string | undefined, payload: McqExamGeneratorPayload, variantLabel: string) {
+  return escapeHtml(renderField(template, payload, variantLabel))
+    .replaceAll("{page}", '<span class="pageNumber"></span>')
+    .replaceAll("{pages}", '<span class="totalPages"></span>');
 }
 
 function katexCssPatch() {
