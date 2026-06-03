@@ -14,20 +14,14 @@ type VariantPlan = {
   questions: GeneratedQuestion[];
 };
 
-type PdfHeaderFooterOptions = {
-  payload: McqExamGeneratorPayload;
-  variantLabel: string;
-  copyLabel: string;
-};
-
 export async function previewMcqExamPackage(payload: McqExamGeneratorPayload): Promise<McqExamPreviewResult> {
   const { runQuestionSet, variantPlans } = buildVariantPlans(payload);
   const variants = [];
 
   for (const plan of variantPlans) {
-    const studentPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, false), { payload, variantLabel: plan.label, copyLabel: "Student copy" });
-    const teacherPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, true), { payload, variantLabel: plan.label, copyLabel: "Teacher copy" });
-    const answerKeyPdf = await pdfBufferFromHtml(renderAnswerKeyHtml(payload, plan), { payload, variantLabel: plan.label, copyLabel: "Answer key" });
+    const studentPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, false));
+    const teacherPdf = await pdfBufferFromHtml(renderExamHtml(payload, plan, true));
+    const answerKeyPdf = await pdfBufferFromHtml(renderAnswerKeyHtml(payload, plan));
     variants.push({
       label: plan.label,
       studentDataUrl: `data:application/pdf;base64,${studentPdf.toString("base64")}`,
@@ -57,9 +51,9 @@ export async function generateMcqExamPackage(payload: McqExamGeneratorPayload) {
     const teacherName = `${safeTitle}_teacher_${plan.label}.pdf`;
     const answerKeyName = `${safeTitle}_answer_key_${plan.label}.pdf`;
 
-    await writePdfFromHtml(path.join(folderPath, studentName), renderExamHtml(payload, plan, false), { payload, variantLabel: plan.label, copyLabel: "Student copy" });
-    await writePdfFromHtml(path.join(folderPath, teacherName), renderExamHtml(payload, plan, true), { payload, variantLabel: plan.label, copyLabel: "Teacher copy" });
-    await writePdfFromHtml(path.join(folderPath, answerKeyName), renderAnswerKeyHtml(payload, plan), { payload, variantLabel: plan.label, copyLabel: "Answer key" });
+    await writePdfFromHtml(path.join(folderPath, studentName), renderExamHtml(payload, plan, false));
+    await writePdfFromHtml(path.join(folderPath, teacherName), renderExamHtml(payload, plan, true));
+    await writePdfFromHtml(path.join(folderPath, answerKeyName), renderAnswerKeyHtml(payload, plan));
     files.push(studentName, teacherName, answerKeyName);
   }
 
@@ -111,12 +105,12 @@ function answerPayload(plan: VariantPlan) {
   }));
 }
 
-async function writePdfFromHtml(filePath: string, html: string, options: PdfHeaderFooterOptions) {
-  const pdf = await pdfBufferFromHtml(html, options);
+async function writePdfFromHtml(filePath: string, html: string) {
+  const pdf = await pdfBufferFromHtml(html);
   fs.writeFileSync(filePath, pdf);
 }
 
-async function pdfBufferFromHtml(html: string, options: PdfHeaderFooterOptions) {
+async function pdfBufferFromHtml(html: string) {
   const window = new BrowserWindow({
     show: false,
     width: 900,
@@ -130,33 +124,29 @@ async function pdfBufferFromHtml(html: string, options: PdfHeaderFooterOptions) 
 
   try {
     await window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
-    await window.webContents.executeJavaScript(`
-      Promise.all([
-        document.fonts ? document.fonts.ready : Promise.resolve(),
-        Promise.all(Array.from(document.images).map((img) => img.complete ? Promise.resolve() : new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        })))
-      ])
-    `);
+    await waitForRendererAssets(window);
+    await window.webContents.executeJavaScript("window.paginateTeacherDeskExam ? window.paginateTeacherDeskExam() : undefined");
+    await waitForRendererAssets(window);
     const pdf = await window.webContents.printToPDF({
-      displayHeaderFooter: true,
-      headerTemplate: renderPrintHeaderTemplate(options.payload, options.variantLabel),
-      footerTemplate: renderPrintFooterTemplate(options.payload, options.variantLabel, options.copyLabel),
-      pageSize: "A4",
-      margins: {
-        top: 0.72,
-        bottom: 0.72,
-        left: 0.35,
-        right: 0.35
-      },
       printBackground: true,
-      preferCSSPageSize: false
+      preferCSSPageSize: true
     });
     return pdf;
   } finally {
     window.destroy();
   }
+}
+
+async function waitForRendererAssets(window: BrowserWindow) {
+  await window.webContents.executeJavaScript(`
+    Promise.all([
+      document.fonts ? document.fonts.ready : Promise.resolve(),
+      Promise.all(Array.from(document.images).map((img) => img.complete ? Promise.resolve() : new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      })))
+    ])
+  `);
 }
 
 function renderExamHtml(payload: McqExamGeneratorPayload, plan: VariantPlan, teacherCopy: boolean) {
@@ -201,8 +191,7 @@ function renderAnswerKeyHtml(payload: McqExamGeneratorPayload, plan: VariantPlan
 
 function renderDocument(payload: McqExamGeneratorPayload, variantLabel: string, copyLabel: string, body: string) {
   const katexCss = readKatexCss();
-  void variantLabel;
-  void copyLabel;
+  const pageShell = renderPageShellData(payload, variantLabel, copyLabel);
   return `<!doctype html>
   <html>
     <head>
@@ -212,7 +201,12 @@ function renderDocument(payload: McqExamGeneratorPayload, variantLabel: string, 
       <style>${renderPrintCss(payload)}</style>
     </head>
     <body>
-      ${body}
+      <div id="td-page-root"></div>
+      <div id="td-question-source">${body}</div>
+      <script>
+        window.__teacherDeskPageShell = ${JSON.stringify(pageShell)};
+        ${renderPaginationScript()}
+      </script>
     </body>
   </html>`;
 }
@@ -224,20 +218,90 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
   return `
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
+    html {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+    }
     body {
       margin: 0;
+      padding: 0;
       color: #111827;
       background: #fff;
       font-family: Calibri, Arial, sans-serif;
       font-size: 11pt;
       line-height: 1.25;
     }
+    #td-page-root {
+      width: 210mm;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+    }
+    #td-question-source {
+      position: absolute;
+      left: -10000px;
+      top: 0;
+      width: 174mm;
+      visibility: hidden;
+      background: #fff;
+    }
+    .td-page {
+      width: 210mm;
+      height: 297mm;
+      margin: 0;
+      padding: 7mm 18mm;
+      background: #fff;
+      display: grid;
+      grid-template-rows: 10mm minmax(0, 1fr) 9mm;
+      break-after: page;
+      page-break-after: always;
+      overflow: hidden;
+    }
+    .td-page:last-child {
+      break-after: auto;
+      page-break-after: auto;
+    }
+    .td-page-header,
+    .td-page-footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+      gap: 8mm;
+      color: #475569;
+      font-size: 8pt;
+      line-height: 1.15;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .td-page-header { align-self: start; padding-top: 0.5mm; }
+    .td-page-footer { align-self: end; padding-bottom: 0.5mm; }
+    .td-page-header span,
+    .td-page-footer span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .td-page-header .center,
+    .td-page-footer .center {
+      color: #0f172a;
+      font-weight: 700;
+      text-align: center;
+    }
+    .td-page-header .right,
+    .td-page-footer .right {
+      text-align: right;
+    }
+    .td-page-content {
+      min-height: 0;
+      overflow: hidden;
+      padding: 2mm 0;
+    }
     .cover-page {
-      min-height: 250mm;
+      height: 100%;
       display: grid;
       align-content: center;
       justify-items: center;
-      page-break-after: always;
       text-align: center;
     }
     .cover-page h1 { margin: 0 0 8mm; font-size: 20pt; }
@@ -309,32 +373,94 @@ function renderCoverPage(payload: McqExamGeneratorPayload, variantLabel: string,
   </section>`;
 }
 
-function renderPrintHeaderTemplate(payload: McqExamGeneratorPayload, variantLabel: string) {
-  return renderPrintTemplateRow(
-    renderHeaderFooterField(payload.headerFooter.headerLeft, payload, variantLabel),
-    renderHeaderFooterField(payload.headerFooter.headerCenter || payload.title, payload, variantLabel),
-    renderHeaderFooterField(payload.headerFooter.headerRight, payload, variantLabel),
-    "header"
-  );
+function renderPageShellData(payload: McqExamGeneratorPayload, variantLabel: string, copyLabel: string) {
+  return {
+    headerLeft: renderPageFieldHtml(payload.headerFooter.headerLeft, payload, variantLabel, copyLabel),
+    headerCenter: renderPageFieldHtml(payload.headerFooter.headerCenter || payload.title, payload, variantLabel, copyLabel),
+    headerRight: renderPageFieldHtml(payload.headerFooter.headerRight, payload, variantLabel, copyLabel),
+    footerLeft: renderPageFieldHtml(payload.headerFooter.footerLeft, payload, variantLabel, copyLabel),
+    footerCenter: renderPageFieldHtml(payload.headerFooter.footerCenter || "{copy}", payload, variantLabel, copyLabel),
+    footerRight: renderPageFieldHtml(payload.headerFooter.footerRight, payload, variantLabel, copyLabel)
+  };
 }
 
-function renderPrintFooterTemplate(payload: McqExamGeneratorPayload, variantLabel: string, copyLabel: string) {
-  return renderPrintTemplateRow(
-    renderHeaderFooterField(payload.headerFooter.footerLeft, payload, variantLabel),
-    renderHeaderFooterField(payload.headerFooter.footerCenter || copyLabel, payload, variantLabel).replaceAll("{copy}", escapeHtml(copyLabel)),
-    renderHeaderFooterField(payload.headerFooter.footerRight, payload, variantLabel),
-    "footer"
-  );
-}
+function renderPaginationScript() {
+  return `
+    window.paginateTeacherDeskExam = function paginateTeacherDeskExam() {
+      const shell = window.__teacherDeskPageShell || {};
+      const root = document.getElementById("td-page-root");
+      const source = document.getElementById("td-question-source");
+      if (!root || !source) return;
+      root.innerHTML = "";
 
-function renderPrintTemplateRow(left: string, center: string, right: string, placement: "header" | "footer") {
-  const align = placement === "header" ? "start" : "end";
-  const shift = placement === "header" ? "translateY(-14px)" : "translateY(14px)";
-  return `<div style="width:100%;height:100%;padding:0 0.35in;box-sizing:border-box;font-family:Calibri,Arial,sans-serif;font-size:8px;color:#475569;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:${align};line-height:1.2;transform:${shift};">
-    <span style="text-align:left;">${left}</span>
-    <span style="text-align:center;font-weight:700;color:#0f172a;">${center}</span>
-    <span style="text-align:right;">${right}</span>
-  </div>`;
+      function fillField(element, html) {
+        element.innerHTML = html || "";
+      }
+
+      function createPage() {
+        const page = document.createElement("section");
+        page.className = "td-page";
+        page.innerHTML =
+          '<header class="td-page-header">' +
+            '<span class="left"></span><span class="center"></span><span class="right"></span>' +
+          '</header>' +
+          '<main class="td-page-content"></main>' +
+          '<footer class="td-page-footer">' +
+            '<span class="left"></span><span class="center"></span><span class="right"></span>' +
+          '</footer>';
+        fillField(page.querySelector(".td-page-header .left"), shell.headerLeft);
+        fillField(page.querySelector(".td-page-header .center"), shell.headerCenter);
+        fillField(page.querySelector(".td-page-header .right"), shell.headerRight);
+        fillField(page.querySelector(".td-page-footer .left"), shell.footerLeft);
+        fillField(page.querySelector(".td-page-footer .center"), shell.footerCenter);
+        fillField(page.querySelector(".td-page-footer .right"), shell.footerRight);
+        root.appendChild(page);
+        return page;
+      }
+
+      function pageContent(page) {
+        return page.querySelector(".td-page-content");
+      }
+
+      function isOverflowing(content) {
+        return content.scrollHeight > content.clientHeight + 1;
+      }
+
+      const cover = source.querySelector(".cover-page");
+      if (cover) {
+        const coverPage = createPage();
+        pageContent(coverPage).appendChild(cover);
+      }
+
+      const questions = Array.from(source.querySelectorAll(".exam-paper > .question, .answer-key"));
+      let page = createPage();
+      for (const question of questions) {
+        let content = pageContent(page);
+        const hadContent = content.children.length > 0;
+        content.appendChild(question);
+        if (isOverflowing(content) && hadContent) {
+          question.remove();
+          page = createPage();
+          content = pageContent(page);
+          content.appendChild(question);
+        }
+        if (isOverflowing(content)) {
+          question.classList.add("is-tall-question");
+        }
+      }
+
+      if (pageContent(page).children.length === 0 && root.children.length > 1) {
+        page.remove();
+      }
+
+      const pages = Array.from(root.querySelectorAll(".td-page"));
+      pages.forEach((pageNode, index) => {
+        pageNode.querySelectorAll("[data-page-number]").forEach((node) => { node.textContent = String(index + 1); });
+        pageNode.querySelectorAll("[data-page-count]").forEach((node) => { node.textContent = String(pages.length); });
+      });
+      source.remove();
+    };
+  `;
 }
 
 function renderQuestion(question: GeneratedQuestion, questionNumber: number, teacherCopy: boolean, _numberGap: number, _questionGap: number) {
@@ -766,26 +892,21 @@ function randomItem<T>(items: T[]) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function renderField(template: string | undefined, payload: McqExamGeneratorPayload, variantLabel: string) {
+function renderField(template: string | undefined, payload: McqExamGeneratorPayload, variantLabel: string, copyLabel = "") {
   return (template ?? "")
     .replaceAll("{title}", payload.title)
     .replaceAll("{variant}", `Variant ${variantLabel}`)
+    .replaceAll("{copy}", copyLabel)
     .replaceAll("{date}", new Date().toLocaleDateString())
     .replaceAll("{paper}", "Paper 1")
     .replaceAll("{teacher}", "Teacher")
     .replaceAll("{syllabus}", payload.questions[0]?.syllabus || "");
 }
 
-function renderFieldHtml(template: string | undefined, payload: McqExamGeneratorPayload, variantLabel: string) {
-  return escapeHtml(renderField(template, payload, variantLabel))
-    .replaceAll("{page}", '<span class="page-number"></span>')
-    .replaceAll("{pages}", '<span class="page-count"></span>');
-}
-
-function renderHeaderFooterField(template: string | undefined, payload: McqExamGeneratorPayload, variantLabel: string) {
-  return escapeHtml(renderField(template, payload, variantLabel))
-    .replaceAll("{page}", '<span class="pageNumber"></span>')
-    .replaceAll("{pages}", '<span class="totalPages"></span>');
+function renderPageFieldHtml(template: string | undefined, payload: McqExamGeneratorPayload, variantLabel: string, copyLabel: string) {
+  return escapeHtml(renderField(template, payload, variantLabel, copyLabel))
+    .replaceAll("{page}", '<span data-page-number></span>')
+    .replaceAll("{pages}", '<span data-page-count></span>');
 }
 
 function katexCssPatch() {
