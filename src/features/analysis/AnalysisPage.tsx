@@ -3,6 +3,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { teacherDeskApi } from "../../lib/rendererApi";
 import type { AnalysisOverview, AnalysisStudentRecord, AnalysisStudentSavePayload, AppSettings } from "../../types";
+import {
+  ExamAnalysisPage,
+  QuestionAnalysisPage,
+  StudentAnalysisPage,
+  TagAnalysisPage,
+  TopicAnalysisPage
+} from "./AnalysisReportPages";
 
 type AnalysisMode = "overview" | "students" | "mcq-entry" | "structured-entry" | "student-analysis" | "question-analysis" | "exam-analysis" | "topic-analysis" | "tag-analysis";
 type ExamType = "mcq" | "structured";
@@ -121,11 +128,11 @@ export function AnalysisPage({ mode, settings }: Props) {
       ) : null}
       {mode === "mcq-entry" ? <CapturePanel examType="mcq" settings={settings} students={activeStudents} /> : null}
       {mode === "structured-entry" ? <CapturePanel examType="structured" settings={settings} students={activeStudents} /> : null}
-      {mode === "student-analysis" ? <PlaceholderAnalysisPanel type="student" /> : null}
-      {mode === "question-analysis" ? <PlaceholderAnalysisPanel type="question" /> : null}
-      {mode === "exam-analysis" ? <PlaceholderAnalysisPanel type="exam" /> : null}
-      {mode === "topic-analysis" ? <PlaceholderAnalysisPanel type="topic" /> : null}
-      {mode === "tag-analysis" ? <PlaceholderAnalysisPanel type="tag" /> : null}
+      {mode === "student-analysis" ? <StudentAnalysisPage overview={overview} students={students} /> : null}
+      {mode === "question-analysis" ? <QuestionAnalysisPage overview={overview} /> : null}
+      {mode === "exam-analysis" ? <ExamAnalysisPage overview={overview} /> : null}
+      {mode === "topic-analysis" ? <TopicAnalysisPage overview={overview} /> : null}
+      {mode === "tag-analysis" ? <TagAnalysisPage overview={overview} /> : null}
 
       {message ? <div className="analysis-toast">{message}</div> : null}
     </div>
@@ -480,55 +487,6 @@ function getResponsiveQuestionCount(width: number, mode: ExamType) {
   const padding = 24;
   const available = Math.max(cellWidth * 4, width - studentWidth - variantWidth - scoreWidth - padding);
   return Math.max(4, Math.floor(available / cellWidth));
-}
-
-function PlaceholderAnalysisPanel({ type }: { type: "student" | "question" | "exam" | "topic" | "tag" }) {
-  const titleMap = {
-    student: "Student analysis",
-    question: "Question analysis",
-    exam: "Exam analysis",
-    topic: "Topic analysis",
-    tag: "Tag analysis"
-  };
-  const rows = [
-    { name: type === "student" ? "Student One" : type === "exam" ? "AS Physics MCQ Practice" : "Forces, density and pressure", attempts: 42, score: "68%", trend: "Needs attention" },
-    { name: type === "student" ? "Student Two" : type === "question" ? "9702_w25_qp_12 #15" : "Physical quantities", attempts: 39, score: "74%", trend: "Improving" },
-    { name: type === "tag" ? "uncertainty" : "Dynamics", attempts: 31, score: "81%", trend: "Secure" }
-  ];
-  return (
-    <section className="analysis-panel analysis-placeholder-panel">
-      <header>
-        <h3>{titleMap[type]}</h3>
-        <span>Placeholder data</span>
-      </header>
-      <div className="analysis-placeholder-grid">
-        <div><strong>74%</strong><span>Average performance</span></div>
-        <div><strong>112</strong><span>Recorded attempts</span></div>
-        <div><strong>18</strong><span>Linked questions</span></div>
-        <div><strong>6</strong><span>Classes covered</span></div>
-      </div>
-      <table className="analysis-table">
-        <thead>
-          <tr>
-            <th>{type === "student" ? "Student" : "Item"}</th>
-            <th>Attempts</th>
-            <th>Average</th>
-            <th>Trend</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.name}>
-              <td><strong>{row.name}</strong><small>Dummy data until capture records are saved</small></td>
-              <td>{row.attempts}</td>
-              <td>{row.score}</td>
-              <td>{row.trend}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
 }
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
