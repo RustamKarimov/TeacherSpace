@@ -145,8 +145,8 @@ async function pdfBufferFromHtml(html: string, options: PdfHeaderFooterOptions) 
       footerTemplate: renderPrintFooterTemplate(options.payload, options.variantLabel, options.copyLabel),
       pageSize: "A4",
       margins: {
-        top: 0.5,
-        bottom: 0.5,
+        top: 0.72,
+        bottom: 0.72,
         left: 0.35,
         right: 0.35
       },
@@ -328,8 +328,9 @@ function renderPrintFooterTemplate(payload: McqExamGeneratorPayload, variantLabe
 }
 
 function renderPrintTemplateRow(left: string, center: string, right: string, placement: "header" | "footer") {
-  const align = placement === "header" ? "flex-start" : "flex-end";
-  return `<div style="width:100%;padding:0 0.35in;box-sizing:border-box;font-family:Calibri,Arial,sans-serif;font-size:8px;color:#475569;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:${align};line-height:1.2;">
+  const align = placement === "header" ? "start" : "end";
+  const shift = placement === "header" ? "translateY(-14px)" : "translateY(14px)";
+  return `<div style="width:100%;height:100%;padding:0 0.35in;box-sizing:border-box;font-family:Calibri,Arial,sans-serif;font-size:8px;color:#475569;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:${align};line-height:1.2;transform:${shift};">
     <span style="text-align:left;">${left}</span>
     <span style="text-align:center;font-weight:700;color:#0f172a;">${center}</span>
     <span style="text-align:right;">${right}</span>
