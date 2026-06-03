@@ -136,6 +136,12 @@ export interface McqExamGeneratorResult {
   seed: string;
 }
 
+export interface OutputTitleSuggestion {
+  requestedTitle: string;
+  suggestedTitle: string;
+  exists: boolean;
+}
+
 export interface McqExamPreviewResult {
   seed: string;
   selectedQuestions: McqQuestionRecord[];
@@ -429,6 +435,7 @@ export interface TeacherDeskApi {
   deleteMcqQuestion: (id: string) => Promise<void>;
   previewMcqExamPackage: (payload: McqExamGeneratorPayload) => Promise<McqExamPreviewResult>;
   generateMcqExamPackage: (payload: McqExamGeneratorPayload) => Promise<McqExamGeneratorResult>;
+  suggestOutputExamTitle: (outputFolder: string, title: string) => Promise<OutputTitleSuggestion>;
   pickManifestFile: (currentPath: string) => Promise<string | null>;
   validateStructuredManifest: (input: StructuredSplitterInput) => Promise<StructuredValidationReport>;
   planStructuredSplit: (input: StructuredSplitterInput) => Promise<StructuredSplitPlan>;

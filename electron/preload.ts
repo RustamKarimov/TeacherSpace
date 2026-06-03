@@ -14,6 +14,7 @@ const api: TeacherDeskApi = {
   deleteMcqQuestion: (id) => ipcRenderer.invoke("mcq:delete-question", id),
   previewMcqExamPackage: (payload) => ipcRenderer.invoke("mcq:preview-exam-package", payload),
   generateMcqExamPackage: (payload) => ipcRenderer.invoke("mcq:generate-exam-package", payload),
+  suggestOutputExamTitle: (outputFolder, title) => ipcRenderer.invoke("output:suggest-exam-title", outputFolder, title),
   pickManifestFile: (currentPath) => ipcRenderer.invoke("manifest:pick-file", currentPath),
   validateStructuredManifest: (payload) => ipcRenderer.invoke("structured:validate-manifest", payload),
   planStructuredSplit: (payload) => ipcRenderer.invoke("structured:plan-split", payload),

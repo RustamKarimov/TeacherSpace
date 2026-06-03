@@ -52,6 +52,7 @@ app.whenReady().then(async () => {
     const result = await dialogShowOpenDirectory(browserWindow, currentFolder || path.join(loadSettings().workspaceRoot, "mcq", "generated_exams"));
     return result;
   });
+  ipcMain.handle("output:suggest-exam-title", (_event, outputFolder: string, title: string) => suggestOutputExamTitle(outputFolder, title));
   ipcMain.handle("manifest:pick-file", async (event, currentPath: string) => {
     const browserWindow = BrowserWindow.fromWebContents(event.sender) ?? undefined;
     const defaultPath = resolvePickerDefaultPath(currentPath, loadSettings().workspaceRoot);
@@ -205,6 +206,26 @@ async function dialogShowOpenDirectory(browserWindow: BrowserWindow | undefined,
     : await dialog.showOpenDialog(options);
 
   return result.canceled ? null : result.filePaths[0] ?? null;
+}
+
+function suggestOutputExamTitle(outputFolder: string, title: string) {
+  const requestedTitle = sanitizeFolderName(title || "Untitled Exam");
+  const root = outputFolder && outputFolder.trim() ? outputFolder : path.join(loadSettings().workspaceRoot, "mcq", "generated_exams");
+  const requestedPath = path.join(root, requestedTitle);
+  if (!fs.existsSync(requestedPath)) {
+    return { requestedTitle, suggestedTitle: requestedTitle, exists: false };
+  }
+  let counter = 2;
+  let suggestedTitle = `${requestedTitle} ${counter}`;
+  while (fs.existsSync(path.join(root, suggestedTitle))) {
+    counter += 1;
+    suggestedTitle = `${requestedTitle} ${counter}`;
+  }
+  return { requestedTitle, suggestedTitle, exists: true };
+}
+
+function sanitizeFolderName(value: string) {
+  return value.trim().replace(/[<>:"/\\|?*]+/g, "-") || "Untitled Exam";
 }
 
 async function dialogShowOpenFile(browserWindow: BrowserWindow | undefined, defaultPath: string, title: string, filters: Electron.FileFilter[]) {

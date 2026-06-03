@@ -136,6 +136,9 @@ const fallbackApi: TeacherDeskApi = {
     void payload;
     throw new Error("PDF generation requires the TeacherDesk desktop app. Start TeacherDesk with Start TeacherDesk.bat so the Electron renderer can write A4 PDFs with images, tables, and LaTeX.");
   },
+  async suggestOutputExamTitle(_outputFolder, title) {
+    return { requestedTitle: title, suggestedTitle: title, exists: false };
+  },
   async previewMcqExamPackage(payload) {
     void payload;
     throw new Error("MCQ preview requires the TeacherDesk desktop app. Start TeacherDesk with Start TeacherDesk.bat so the Electron renderer can show the exact A4 PDF preview.");

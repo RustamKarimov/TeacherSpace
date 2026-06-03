@@ -5435,21 +5435,23 @@ button {
 }
 
 .mcq-generator-basket-summary {
-  min-height: 38px;
+  min-height: 34px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   border: 1px solid #bfdbfe;
   border-radius: 5px;
-  padding: 0 10px;
+  padding: 0 9px;
   color: #1f2937;
   background: #eff6ff;
   margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .mcq-generator-basket-summary strong {
   color: #0d5ed8;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .mcq-generator-basket-head,
@@ -5514,6 +5516,25 @@ button {
 
 .mcq-generator-file input {
   font-size: 12px;
+}
+
+.mcq-generator-file input::file-selector-button {
+  height: 28px;
+  margin-right: 8px;
+  border: 1px solid #cfd8e3;
+  border-radius: 5px;
+  padding: 0 10px;
+  color: #0f172a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mcq-generator-file input::file-selector-button:hover {
+  border-color: #8dbbff;
+  color: #0d5ed8;
+  background: #f4f9ff;
 }
 
 .mcq-generator-file strong {
@@ -5649,9 +5670,32 @@ button {
 }
 
 .mcq-generator-start-new {
-  color: #334155;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: #0d5ed8;
   border-color: #cfd8e3;
-  background: #fff;
+  background: #f8fbff;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.mcq-generator-start-new:hover {
+  border-color: #8dbbff;
+  background: #eaf3ff;
+}
+
+.mcq-generator-title-notice {
+  border: 1px solid #fed7aa;
+  border-radius: 5px;
+  padding: 7px 8px;
+  color: #9a3412;
+  background: #fff7ed;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 750;
 }
 
 .mcq-generator-error {

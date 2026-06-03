@@ -40,7 +40,7 @@ export async function previewMcqExamPackage(payload: McqExamGeneratorPayload): P
 
 export async function generateMcqExamPackage(payload: McqExamGeneratorPayload) {
   const safeTitle = sanitizeFileName(payload.title || "Untitled MCQ Exam");
-  const folderPath = path.join(payload.outputFolder, safeTitle);
+  const folderPath = uniqueFolderPath(path.join(payload.outputFolder, safeTitle));
   fs.mkdirSync(folderPath, { recursive: true });
 
   const files: string[] = [];
@@ -214,7 +214,7 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
   const allowSplit = payload.settings.allowQuestionSplit;
   const avoidBreak = allowSplit ? "" : "break-inside: avoid-page; page-break-inside: avoid;";
   return `
-    @page { size: A4; margin: 30mm 23mm 31mm 23mm; }
+    @page { size: A4; margin: 24mm 23mm 24mm 23mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -237,8 +237,8 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
       align-items: center;
       line-height: 1.2;
     }
-    .page-header { top: 6mm; }
-    .page-footer { bottom: 8mm; }
+    .page-header { top: -17mm; }
+    .page-footer { bottom: -16mm; }
     .page-header strong, .page-footer strong { text-align: center; color: #0f172a; }
     .page-header span:last-child, .page-footer span:last-child { text-align: right; }
     .page-number::after { content: counter(page); }
@@ -761,6 +761,17 @@ function shuffle<T>(items: T[]) {
 
 function sanitizeFileName(value: string) {
   return value.trim().replace(/[<>:"/\\|?*]+/g, "-") || "Untitled MCQ Exam";
+}
+
+function uniqueFolderPath(initialPath: string) {
+  if (!fs.existsSync(initialPath)) return initialPath;
+  let counter = 2;
+  let candidate = `${initialPath} ${counter}`;
+  while (fs.existsSync(candidate)) {
+    counter += 1;
+    candidate = `${initialPath} ${counter}`;
+  }
+  return candidate;
 }
 
 function escapeHtml(value: string) {

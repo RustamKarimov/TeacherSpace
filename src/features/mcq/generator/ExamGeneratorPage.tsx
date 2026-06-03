@@ -2,12 +2,12 @@ import {
   BookOpen,
   ChevronDown,
   Eye,
-  FileCheck2,
   FileText,
   FolderOpen,
   Layers,
   Plus,
   RotateCw,
+  ShoppingBasket,
   Trash2
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -60,6 +60,8 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
   const [isGenerating, setIsGenerating] = useState(false);
   const [processLog, setProcessLog] = useState<string[]>(["Ready to generate."]);
   const [generationError, setGenerationError] = useState("");
+  const [titleNotice, setTitleNotice] = useState("");
+  const autoSuggestedTitleRef = useRef("");
   const [headerFooter, setHeaderFooter] = useState<Record<HeaderFooterField, string>>((settings?.defaults.mcqGenerator.headerFooter as Record<HeaderFooterField, string>) ?? {
     headerLeft: "{title}",
     headerCenter: "{variant}",
@@ -83,6 +85,29 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
     if (settings?.defaults.mcqGenerator.outputFolder) setOutputFolder(settings.defaults.mcqGenerator.outputFolder);
     else if (workspace?.workspaceRoot) setOutputFolder(`${workspace.workspaceRoot}\\mcq\\generated_exams`);
   }, [settings?.defaults.mcqGenerator.outputFolder, workspace?.workspaceRoot]);
+
+  useEffect(() => {
+    if (!hasDesktopBridge || !outputFolder.trim() || !title.trim()) return;
+    let cancelled = false;
+    const timeout = window.setTimeout(() => {
+      void teacherDeskApi.suggestOutputExamTitle(outputFolder, title).then((result) => {
+        if (cancelled) return;
+        if (result.exists && result.suggestedTitle !== title) {
+          autoSuggestedTitleRef.current = result.suggestedTitle;
+          setTitleNotice(`An exam folder named "${result.requestedTitle}" already exists. TeacherDesk suggested "${result.suggestedTitle}".`);
+          setTitle(result.suggestedTitle);
+          return;
+        }
+        if (autoSuggestedTitleRef.current !== title) setTitleNotice("");
+      }).catch(() => {
+        if (!cancelled) setTitleNotice("");
+      });
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [outputFolder, title]);
 
   const allTopics = useMemo(() => unique([
     ...questions.filter((question) => paperStage(question.paper) === "AS").flatMap((question) => question.topics),
@@ -276,7 +301,7 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
           <ModeButton active={mode === "full-paper"} icon={<FileText size={15} />} label="Full paper" onClick={() => setMode("full-paper")} />
           <ModeButton active={mode === "topical-total"} icon={<Layers size={15} />} label="Topical total number" onClick={() => setMode("topical-total")} />
           <ModeButton active={mode === "topical-custom"} icon={<BookOpen size={15} />} label="Topical" onClick={() => setMode("topical-custom")} />
-          <ModeButton active={mode === "basket"} icon={<FileCheck2 size={15} />} label="From basket" onClick={() => setMode("basket")} />
+          <ModeButton active={mode === "basket"} icon={<ShoppingBasket size={15} />} label="From basket" onClick={() => setMode("basket")} />
         </section>
 
         <section className="mcq-generator-workarea">
@@ -335,6 +360,7 @@ export function ExamGeneratorPage({ settings, workspace }: { settings: AppSettin
           showStartNew={Boolean(summary || preview)}
           summary={summary}
           title={title}
+          titleNotice={titleNotice}
           onChooseOutput={chooseOutputFolder}
           onGenerate={generatePackage}
           onPreview={generatePreview}
@@ -400,7 +426,6 @@ function TopicalTotalMode({
   onSelectedTopicsChange: (topics: string[]) => void;
   onTopicInputChange: (value: string) => void;
 }) {
-  const filtered = allTopics.filter((topic) => topic.toLowerCase().includes(topicInput.toLowerCase()) && !selectedTopics.includes(topic));
   const split = selectedTopics.length ? distributeTotal(questionCount, selectedTopics) : [];
 
   return (
@@ -435,14 +460,6 @@ function TopicalTotalMode({
             <strong>{topic}</strong>
             <span>{count} questions</span>
           </div>
-        ))}
-      </div>
-      <div className="mcq-generator-quick-topics">
-        {filtered.slice(0, 8).map((topic) => (
-          <button key={topic} type="button" onClick={() => {
-            onSelectedTopicsChange([...selectedTopics, topic]);
-            onTopicInputChange("");
-          }}>{topic}</button>
         ))}
       </div>
     </Panel>
@@ -587,6 +604,7 @@ function BasketMode({ questions }: { questions: McqQuestionRecord[] }) {
   return (
     <Panel title="From Basket" subtitle="Uses questions manually selected in Question Bank.">
       <div className="mcq-generator-basket-summary">
+        <ShoppingBasket size={16} />
         <strong>{questions.length}</strong>
         <span>question{questions.length === 1 ? "" : "s"} ready for a manual paper</span>
       </div>
@@ -679,6 +697,7 @@ function OutputPanel({
   showStartNew,
   summary,
   title,
+  titleNotice,
   onChooseOutput,
   onGenerate,
   onPreview,
@@ -697,6 +716,7 @@ function OutputPanel({
   showStartNew: boolean;
   summary: GenerationSummary | null;
   title: string;
+  titleNotice: string;
   onChooseOutput: () => void;
   onGenerate: () => void;
   onPreview: () => void;
@@ -709,6 +729,7 @@ function OutputPanel({
     <section className="mcq-generator-output">
       <h2>Output Package</h2>
       <TextField label="Exam title" value={title} onChange={onTitleChange} />
+      {titleNotice ? <div className="mcq-generator-title-notice">{titleNotice}</div> : null}
       <div className="mcq-generator-folder">
         <span>Output folder</span>
         <input value={outputFolder} onChange={(event) => onOutputFolderChange(event.target.value)} />
