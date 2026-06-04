@@ -22,17 +22,18 @@ import clsx from "clsx";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import type { ThemeMode } from "../types";
+import { ThemeToggle } from "../components/ui";
 
 type AppShellProps = {
   activeItem: string;
   children: ReactNode;
   theme: ThemeMode;
   title?: string;
-  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
+  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
   onThemeChange: (theme: ThemeMode) => void;
 };
 
-export function AppShell({ activeItem, children, title = "Dashboard", onNavigate }: AppShellProps) {
+export function AppShell({ activeItem, children, title = "Dashboard", theme, onNavigate, onThemeChange }: AppShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMcqOpen, setIsMcqOpen] = useState(true);
   const [isStructuredOpen, setIsStructuredOpen] = useState(true);
@@ -172,7 +173,7 @@ export function AppShell({ activeItem, children, title = "Dashboard", onNavigate
                   <SlidersHorizontal size={14} />
                   <span>Metadata</span>
                 </button>
-                <button type="button">
+                <button className={activeItem === "component-gallery" ? "is-active" : undefined} type="button" onClick={() => onNavigate("component-gallery")}>
                   <SlidersHorizontal size={14} />
                   <span>Component Gallery</span>
                 </button>
@@ -200,7 +201,9 @@ export function AppShell({ activeItem, children, title = "Dashboard", onNavigate
       <section className="td-workspace">
         <header className="td-windowbar">
           <h1>{title}</h1>
-          <div className="td-windowbar-actions" aria-hidden="true" />
+          <div className="td-windowbar-actions">
+            <ThemeToggle value={theme} onChange={onThemeChange} />
+          </div>
         </header>
         {children}
       </section>

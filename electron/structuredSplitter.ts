@@ -483,5 +483,5 @@ function label(kind: "topic" | "tag") {
 
 function relativeToWorkspace(workspaceRoot: string, filePath: string) {
   const relative = path.relative(workspaceRoot, filePath);
-  return relative.startsWith("..") || path.isAbsolute(relative) ? filePath : relative;
+  return relative.startsWith("..") || path.isAbsolute(relative) ? filePath : relative.replaceAll(path.sep, "/");
 }

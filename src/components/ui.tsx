@@ -2,7 +2,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  BookOpen,
   Check,
   ChevronDown,
   Circle,
@@ -12,18 +11,14 @@ import {
   FileImage,
   FileText,
   FolderOpen,
-  Gauge,
   Image,
   Info,
-  Layers3,
   Moon,
   MoreHorizontal,
   PanelRight,
   Plus,
   Printer,
   Search,
-  Settings,
-  Sparkles,
   Sun,
   Table2,
   Trash2,
@@ -490,54 +485,6 @@ export function ImportExportDialog() {
         <Button variant="secondary" icon={<Download size={15} />}>Export selection</Button>
       </div>
     </Modal>
-  );
-}
-
-export function AppShell({
-  theme,
-  onThemeChange,
-  children
-}: {
-  theme: ThemeMode;
-  onThemeChange: (theme: ThemeMode) => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="td-app-shell">
-      <aside className="td-sidebar">
-        <div className="td-brand">
-          <span><BookOpen size={19} /></span>
-          <div>
-            <strong>TeacherDesk</strong>
-            <small>Physics workspace</small>
-          </div>
-        </div>
-        {["Dashboard", "Component Gallery", "MCQ Builder", "Question Bank", "Exam Generator", "Settings"].map((item, index) => (
-          <button className={index === 1 ? "is-active" : undefined} type="button" key={item}>
-            {index === 0 ? <Gauge size={16} /> : index === 5 ? <Settings size={16} /> : index === 1 ? <Layers3 size={16} /> : <FileText size={16} />}
-            {item}
-          </button>
-        ))}
-        <div className="td-sidebar-note">
-          <Sparkles size={15} />
-          <span>Shared components must land here before module pages use them.</span>
-        </div>
-      </aside>
-      <main className="td-main">
-        <header className="td-topbar">
-          <div>
-            <span className="td-eyebrow">Design system</span>
-            <h1>Component Gallery</h1>
-            <p>Reusable TeacherDesk interface patterns for MCQ authoring, previews, files, and metadata.</p>
-          </div>
-          <div className="td-topbar-actions">
-            <IconButton label="More actions" icon={<MoreHorizontal size={16} />} />
-            <ThemeToggle value={theme} onChange={onThemeChange} />
-          </div>
-        </header>
-        {children}
-      </main>
-    </div>
   );
 }
 

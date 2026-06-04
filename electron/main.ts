@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, ipcMain, shell, dialog } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { deleteAnalysisStudent, deleteMcqQuestion, deleteStructuredQuestions, getAnalysisOverview, getMcqQuestion, listAnalysisStudents, listMcqQuestions, listStructuredQuestions, runMigrations, saveAnalysisStudent, saveMcqQuestion, updateStructuredQuestionMetadata } from "./database.js";
+import { deleteAnalysisStudent, deleteMcqQuestion, deleteStructuredQuestions, getAnalysisOverview, getMcqQuestion, listAnalysisStudents, listMcqQuestions, listStructuredQuestions, runMigrations, saveAnalysisStudent, saveGeneratedExamRecord, saveMcqQuestion, updateStructuredQuestionMetadata } from "./database.js";
 import { generateMcqExamPackage, previewMcqExamPackage } from "./examGenerator.js";
 import { exportTeacherDeskPackage, importTeacherDeskPackage } from "./importExport.js";
 import { generateStructuredExamPackage, previewStructuredExamPackage } from "./structuredExamGenerator.js";
@@ -84,7 +84,12 @@ app.whenReady().then(async () => {
     return deleteMcqQuestion(workspaceInfo.databasePath, id);
   });
   ipcMain.handle("mcq:preview-exam-package", async (_event, payload) => previewMcqExamPackage(payload));
-  ipcMain.handle("mcq:generate-exam-package", async (_event, payload) => generateMcqExamPackage(payload));
+  ipcMain.handle("mcq:generate-exam-package", async (_event, payload) => {
+    const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
+    const result = await generateMcqExamPackage(payload);
+    await saveGeneratedExamRecord(workspaceInfo.databasePath, "mcq", result.folderPath, readPackageManifest(result.folderPath));
+    return result;
+  });
   ipcMain.handle("structured:validate-manifest", async (_event, payload) => {
     const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
     return validateStructuredManifest(workspaceInfo.databasePath, payload);
@@ -121,7 +126,9 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("structured:generate-exam-package", async (_event, payload) => {
     const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
-    return generateStructuredExamPackage(workspaceInfo.databasePath, workspaceInfo.workspaceRoot, payload);
+    const result = await generateStructuredExamPackage(workspaceInfo.databasePath, workspaceInfo.workspaceRoot, payload);
+    await saveGeneratedExamRecord(workspaceInfo.databasePath, "structured", result.folderPath, readPackageManifest(result.folderPath));
+    return result;
   });
   ipcMain.handle("package:export", async (_event, outputFolder: string) => {
     const workspaceInfo = ensureWorkspace(loadSettings().workspaceRoot);
@@ -226,6 +233,14 @@ function suggestOutputExamTitle(outputFolder: string, title: string) {
 
 function sanitizeFolderName(value: string) {
   return value.trim().replace(/[<>:"/\\|?*]+/g, "-") || "Untitled Exam";
+}
+
+function readPackageManifest(folderPath: string) {
+  const manifestPath = path.join(folderPath, "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(`Generated exam manifest was not found: ${manifestPath}`);
+  }
+  return JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
 }
 
 async function dialogShowOpenFile(browserWindow: BrowserWindow | undefined, defaultPath: string, title: string, filters: Electron.FileFilter[]) {

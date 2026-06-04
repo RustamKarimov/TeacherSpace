@@ -201,7 +201,7 @@ function resolvePath(workspaceRoot: string, candidate: string) {
 }
 
 function toWorkspaceRelative(workspaceRoot: string, absolutePath: string) {
-  return path.relative(workspaceRoot, absolutePath);
+  return path.relative(workspaceRoot, absolutePath).replaceAll(path.sep, "/");
 }
 
 function hashFile(filePath: string) {

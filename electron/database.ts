@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
+import path from "node:path";
 import initSqlJs, { type Database } from "sql.js";
 import type { AnalysisOverview, AnalysisStudentRecord, AnalysisStudentSavePayload, McqQuestionRecord, McqQuestionSavePayload, StructuredManifestRow, StructuredMetadataUpdate, StructuredQuestionRecord, StructuredSplitterInput, StructuredValidationReport } from "./shared.js";
 
@@ -304,6 +305,31 @@ const migrations = [
         last_calculated_at TEXT NOT NULL,
         PRIMARY KEY (source_type, tag_id),
         FOREIGN KEY (tag_id) REFERENCES mcq_tags(id) ON DELETE CASCADE
+      );
+    `
+  },
+  {
+    version: 4,
+    name: "generated_exam_registry",
+    sql: `
+      ALTER TABLE generated_exams ADD COLUMN source_type TEXT NOT NULL DEFAULT 'mcq';
+      ALTER TABLE generated_exams ADD COLUMN folder_path TEXT NOT NULL DEFAULT '';
+
+      CREATE INDEX IF NOT EXISTS idx_generated_exams_source_created
+        ON generated_exams (source_type, created_at);
+
+      CREATE TABLE IF NOT EXISTS generated_exam_variants (
+        id TEXT PRIMARY KEY,
+        generated_exam_id TEXT NOT NULL,
+        variant_label TEXT NOT NULL,
+        question_order_json TEXT NOT NULL DEFAULT '[]',
+        answer_key_json TEXT NOT NULL DEFAULT '{}',
+        student_file_path TEXT NOT NULL DEFAULT '',
+        teacher_file_path TEXT NOT NULL DEFAULT '',
+        answer_key_file_path TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        UNIQUE (generated_exam_id, variant_label),
+        FOREIGN KEY (generated_exam_id) REFERENCES generated_exams(id) ON DELETE CASCADE
       );
     `
   }
@@ -685,6 +711,115 @@ export async function deleteAnalysisStudent(databasePath: string, id: string): P
   } finally {
     db.close();
   }
+}
+
+export async function saveGeneratedExamRecord(
+  databasePath: string,
+  sourceType: "mcq" | "structured",
+  folderPath: string,
+  manifest: Record<string, unknown>
+): Promise<string> {
+  const db = await openDatabase(databasePath);
+  const now = new Date().toISOString();
+  const examId = randomUUID();
+  const title = String(manifest.title ?? "Untitled Exam");
+  const mode = String(manifest.mode ?? sourceType);
+
+  try {
+    db.run("PRAGMA foreign_keys = ON;");
+    db.run("BEGIN;");
+    db.run(
+      `INSERT INTO generated_exams (id, title, mode, manifest_json, created_at, source_type, folder_path)
+       VALUES (?, ?, ?, ?, ?, ?, ?);`,
+      [examId, title, mode, JSON.stringify(manifest), String(manifest.createdAt ?? now), sourceType, folderPath]
+    );
+
+    for (const variant of generatedExamVariantsFromManifest(sourceType, folderPath, manifest)) {
+      db.run(
+        `INSERT INTO generated_exam_variants (
+          id, generated_exam_id, variant_label, question_order_json, answer_key_json,
+          student_file_path, teacher_file_path, answer_key_file_path, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        [
+          randomUUID(),
+          examId,
+          variant.label,
+          JSON.stringify(variant.questionOrder),
+          JSON.stringify(variant.answerKey),
+          variant.studentFilePath,
+          variant.teacherFilePath,
+          variant.answerKeyFilePath,
+          now
+        ]
+      );
+    }
+
+    db.run("COMMIT;");
+    persistDatabase(db, databasePath);
+    return examId;
+  } catch (error) {
+    try {
+      db.run("ROLLBACK;");
+    } catch {
+      // Ignore rollback errors.
+    }
+    throw error;
+  } finally {
+    db.close();
+  }
+}
+
+function generatedExamVariantsFromManifest(sourceType: "mcq" | "structured", folderPath: string, manifest: Record<string, unknown>) {
+  const files = Array.isArray(manifest.files) ? manifest.files.map(String) : [];
+  if (sourceType === "mcq" && Array.isArray(manifest.variants)) {
+    return manifest.variants.filter(isRecordLike).map((variant) => {
+      const label = String(variant.label ?? "A");
+      const answers = Array.isArray(variant.questions) ? variant.questions.filter(isRecordLike) : [];
+      return {
+        label,
+        questionOrder: answers.map((answer) => ({
+          id: String(answer.id ?? ""),
+          number: Number(answer.number ?? 0),
+          examCode: String(answer.examCode ?? ""),
+          originalQuestionNumber: String(answer.originalQuestionNumber ?? "")
+        })),
+        answerKey: Object.fromEntries(answers.map((answer) => [String(answer.number ?? ""), String(answer.answer ?? "")])),
+        studentFilePath: findGeneratedFile(folderPath, files, `_student_${label}.pdf`),
+        teacherFilePath: findGeneratedFile(folderPath, files, `_teacher_${label}.pdf`),
+        answerKeyFilePath: findGeneratedFile(folderPath, files, `_answer_key_${label}.pdf`)
+      };
+    });
+  }
+
+  const questions = Array.isArray(manifest.questions) ? manifest.questions.filter(isRecordLike) : [];
+  return [{
+    label: "A",
+    questionOrder: questions.map((question) => ({
+      id: String(question.id ?? ""),
+      number: Number(question.order ?? 0),
+      examCode: String(question.examCode ?? ""),
+      questionNumber: Number(question.questionNumber ?? 0),
+      marks: Number(question.marks ?? 0)
+    })),
+    answerKey: {},
+    studentFilePath: findGeneratedFile(folderPath, files, "_question_paper.pdf"),
+    teacherFilePath: findGeneratedFile(folderPath, files, "_mark_scheme.pdf"),
+    answerKeyFilePath: ""
+  }];
+}
+
+function findGeneratedFile(folderPath: string, files: string[], suffix: string) {
+  const folderFiles = files.length > 0
+    ? files
+    : fs.existsSync(folderPath)
+      ? fs.readdirSync(folderPath).filter((file) => fs.statSync(path.join(folderPath, file)).isFile())
+      : [];
+  const match = folderFiles.find((file) => file.endsWith(suffix));
+  return match ? path.join(folderPath, match) : "";
+}
+
+function isRecordLike(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 export async function getSharedMetadata(databasePath: string): Promise<{ topics: string[]; tags: string[] }> {
