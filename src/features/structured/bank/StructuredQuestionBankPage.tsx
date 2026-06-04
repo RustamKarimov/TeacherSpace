@@ -14,7 +14,7 @@ import {
   TriangleAlert
 } from "lucide-react";
 import clsx from "clsx";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { teacherDeskApi } from "../../../lib/rendererApi";
 import type { StructuredQuestionRecord, WorkspaceInfo } from "../../../types";
 
@@ -65,6 +65,7 @@ export function StructuredQuestionBankPage({ workspace }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const filtersRef = useRef<HTMLElement | null>(null);
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     void loadQuestions();
@@ -87,7 +88,7 @@ export function StructuredQuestionBankPage({ workspace }: Props) {
 
   const options = useMemo(() => buildOptions(questions), [questions]);
   const filteredQuestions = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     return questions.filter((question) => {
       if (query && !`${question.examCode} ${question.questionNumber} ${question.topics.join(" ")} ${question.tags.join(" ")}`.toLowerCase().includes(query)) return false;
       if (!matchesMulti([question.session], sessionFilter)) return false;
@@ -98,7 +99,7 @@ export function StructuredQuestionBankPage({ workspace }: Props) {
       if (!matchesMulti([question.reviewStatus], reviewFilter)) return false;
       return true;
     });
-  }, [paperFilter, questions, reviewFilter, search, sessionFilter, tagsFilter, topicsFilter, yearFilter]);
+  }, [deferredSearch, paperFilter, questions, reviewFilter, sessionFilter, tagsFilter, topicsFilter, yearFilter]);
 
   const selected = filteredQuestions.find((question) => question.id === selectedId) ?? filteredQuestions[0] ?? questions.find((question) => question.id === selectedId) ?? null;
   const selectedOnPage = filteredQuestions.filter((question) => selectedIds.has(question.id)).length;

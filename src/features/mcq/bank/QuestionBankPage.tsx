@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import katex from "katex";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { McqQuestionRecord } from "../../../types";
 import { teacherDeskApi } from "../../../lib/rendererApi";
 import type { McqBlock, McqEditorMetadata, OptionsBlock } from "../editor/types";
@@ -100,6 +100,7 @@ export function QuestionBankPage({ refreshKey, selectedQuestionId, onAddQuestion
   const [notice, setNotice] = useState<string | null>(null);
   const [metadataDraft, setMetadataDraft] = useState<McqMetadataDraft | null>(null);
   const [metadataModalOpen, setMetadataModalOpen] = useState(false);
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     void loadQuestions();
@@ -123,7 +124,7 @@ export function QuestionBankPage({ refreshKey, selectedQuestionId, onAddQuestion
   const activeFilterCount = countFilters(filters);
 
   const filteredQuestions = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     return questions.filter((question) => {
       const textMatch =
         !query ||
@@ -158,7 +159,7 @@ export function QuestionBankPage({ refreshKey, selectedQuestionId, onAddQuestion
         matchesListFilter(filters.tags, filterModes.tags, question.tags)
       );
     });
-  }, [filterModes, filters, questions, search]);
+  }, [deferredSearch, filterModes, filters, questions]);
 
   useEffect(() => {
     setPage(1);
