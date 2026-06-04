@@ -14,7 +14,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import type { McqBlock, OptionLabelPosition, OptionLayout, OptionsBlock } from "../types";
 import { TextWithInlineLatex } from "../text/TextWithInlineLatex";
-import { OptionsPreview } from "../options/OptionsBlockInspector";
+import { OptionsPreview } from "../options/OptionsPreview";
 import { ImageBlockPreview } from "../image/ImageBlockCard";
 import { TableWithLatex } from "../table/TableWithLatex";
 import katex from "katex";

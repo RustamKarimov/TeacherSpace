@@ -44,11 +44,12 @@ describe("database migrations", () => {
     const databasePath = path.join(tempDir, "teacherdesk.sqlite");
 
     const result = await runMigrations(databasePath);
-    expect(result.currentVersion).toBe(4);
+    expect(result.currentVersion).toBe(5);
 
     const SQL = await initSqlJs();
     const db = new SQL.Database(fs.readFileSync(databasePath));
     const tables = db.exec("SELECT name FROM sqlite_master WHERE type = 'table';")[0].values.map((row) => String(row[0]));
+    const indexes = db.exec("SELECT name FROM sqlite_master WHERE type = 'index';")[0].values.map((row) => String(row[0]));
     db.close();
 
     expect(tables).toEqual(expect.arrayContaining([
@@ -63,6 +64,12 @@ describe("database migrations", () => {
       "analysis_topic_stats",
       "analysis_tag_stats",
       "generated_exam_variants"
+    ]));
+    expect(indexes).toEqual(expect.arrayContaining([
+      "idx_mcq_questions_bank_filters",
+      "idx_mcq_question_topics_topic",
+      "idx_structured_questions_bank_filters",
+      "idx_generated_exam_variants_exam"
     ]));
   });
 

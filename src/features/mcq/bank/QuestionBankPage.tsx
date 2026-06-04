@@ -20,7 +20,7 @@ import { teacherDeskApi } from "../../../lib/rendererApi";
 import type { McqBlock, McqEditorMetadata, OptionsBlock } from "../editor/types";
 import { normalizeMcqBlocks } from "../editor/normalizeBlocks";
 import { TextWithInlineLatex } from "../editor/text/TextWithInlineLatex";
-import { OptionsPreview } from "../editor/options/OptionsBlockInspector";
+import { OptionsPreview } from "../editor/options/OptionsPreview";
 import { ImageBlockPreview } from "../editor/image/ImageBlockCard";
 import { TableWithLatex } from "../editor/table/TableWithLatex";
 

@@ -332,6 +332,34 @@ const migrations = [
         FOREIGN KEY (generated_exam_id) REFERENCES generated_exams(id) ON DELETE CASCADE
       );
     `
+  },
+  {
+    version: 5,
+    name: "read_performance_indexes",
+    sql: `
+      CREATE INDEX IF NOT EXISTS idx_mcq_questions_bank_filters
+        ON mcq_questions (year, session, paper, paper_version, review_status);
+      CREATE INDEX IF NOT EXISTS idx_mcq_questions_updated
+        ON mcq_questions (updated_at);
+      CREATE INDEX IF NOT EXISTS idx_mcq_question_topics_topic
+        ON mcq_question_topics (topic_id, question_id);
+      CREATE INDEX IF NOT EXISTS idx_mcq_question_tags_tag
+        ON mcq_question_tags (tag_id, question_id);
+
+      CREATE INDEX IF NOT EXISTS idx_structured_questions_bank_filters
+        ON structured_questions (year, session, paper, paper_version, review_status);
+      CREATE INDEX IF NOT EXISTS idx_structured_questions_marks
+        ON structured_questions (paper, marks);
+      CREATE INDEX IF NOT EXISTS idx_structured_question_topics_topic
+        ON structured_question_topics (topic_id, question_id);
+      CREATE INDEX IF NOT EXISTS idx_structured_question_tags_tag
+        ON structured_question_tags (tag_id, question_id);
+
+      CREATE INDEX IF NOT EXISTS idx_generated_exam_variants_exam
+        ON generated_exam_variants (generated_exam_id, variant_label);
+      CREATE INDEX IF NOT EXISTS idx_analysis_exam_sessions_generated
+        ON analysis_exam_sessions (generated_exam_id, source_type);
+    `
   }
 ];
 
