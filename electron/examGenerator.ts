@@ -823,12 +823,9 @@ function selectQuestionsForVariant(payload: McqExamGeneratorPayload) {
 
   if (selection.mode === "full-paper") {
     const selected: McqQuestionRecord[] = [];
-    const slots = shuffle(Array.from({ length: selection.questionCount }, (_, index) => index + 1));
     for (let slot = 1; slot <= selection.questionCount; slot += 1) {
-      const slotNumber = slots[slot - 1] ?? slot;
-      const candidates = shuffle(readyQuestions.filter((question) => Number(question.originalQuestionNumber) === slotNumber && !selected.some((item) => item.id === question.id)));
-      const fallbackCandidates = readyQuestions.filter((question) => !selected.some((item) => item.id === question.id));
-      const picked = randomItem(candidates.length ? candidates : fallbackCandidates);
+      const candidates = shuffle(readyQuestions.filter((question) => Number(question.originalQuestionNumber) === slot && !selected.some((item) => item.id === question.id)));
+      const picked = randomItem(candidates);
       if (picked) selected.push(picked);
     }
     return selected;

@@ -32,7 +32,7 @@ export function buildAvailability({ mode, questionCount, questions, selectedTopi
     return [`${requested} questions requested across ${topicRows.length} row${topicRows.length === 1 ? "" : "s"}.`, ...rowLines];
   }
   const slots = Array.from({ length: questionCount }, (_, index) => String(index + 1));
-  const missing = slots.filter((slot) => !readyQuestions.some((question) => question.originalQuestionNumber === slot));
+  const missing = slots.filter((slot) => !readyQuestions.some((question) => Number(question.originalQuestionNumber) === Number(slot)));
   return [`${questionCount} original question-number slots requested.`, `${Math.max(0, questionCount - missing.length)} slots have at least one candidate.`, missing.length ? `${missing.length} slots currently have no candidate.` : "All slots have candidates."];
 }
 
@@ -58,8 +58,7 @@ export function selectQuestionsForMode({
     const selected: McqQuestionRecord[] = [];
     for (let slot = 1; slot <= questionCount; slot += 1) {
       const candidates = readyQuestions.filter((question) => Number(question.originalQuestionNumber) === slot && !selected.some((item) => item.id === question.id));
-      const fallbackCandidates = readyQuestions.filter((question) => !selected.some((item) => item.id === question.id));
-      const picked = randomItem(candidates.length ? candidates : fallbackCandidates);
+      const picked = randomItem(candidates);
       if (picked) selected.push(picked);
     }
     return selected;

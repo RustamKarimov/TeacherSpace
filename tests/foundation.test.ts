@@ -6,6 +6,8 @@ import initSqlJs from "sql.js";
 import { runMigrations, saveGeneratedExamRecord } from "../electron/database";
 import { parseExamCode } from "../src/lib/examCode";
 import { toWorkspaceRelative } from "../src/lib/workspacePaths";
+import { selectQuestionsForMode } from "../src/features/mcq/generator/generatorLogic";
+import type { McqQuestionRecord } from "../src/types";
 
 describe("exam code parsing", () => {
   it("parses Cambridge Physics paper codes", () => {
@@ -35,6 +37,31 @@ describe("workspace path handling", () => {
 
   it("keeps external paths absolute", () => {
     expect(toWorkspaceRelative("D:\\TeacherDesk_Workspace", "C:\\Downloads\\figure.png")).toBe("C:\\Downloads\\figure.png");
+  });
+});
+
+describe("MCQ full-paper selection", () => {
+  it("selects each generated question from the matching original question-number bucket", () => {
+    const questions = [
+      mcqQuestion("q1-a", "1"),
+      mcqQuestion("q1-b", "1"),
+      mcqQuestion("q2-a", "2"),
+      mcqQuestion("q3-a", "3"),
+      mcqQuestion("q9-a", "9")
+    ];
+
+    const selected = selectQuestionsForMode({
+      mode: "full-paper",
+      questionCount: 3,
+      questions,
+      selectedTopics: [],
+      topicRows: [],
+      basketQuestions: []
+    });
+
+    expect(selected).toHaveLength(3);
+    expect(selected.map((question) => Number(question.originalQuestionNumber))).toEqual([1, 2, 3]);
+    expect(selected.every((question, index) => Number(question.originalQuestionNumber) === index + 1)).toBe(true);
   });
 });
 
@@ -114,3 +141,26 @@ describe("database migrations", () => {
     expect(String(variantRows[0][2])).toContain("student_A.pdf");
   });
 });
+
+function mcqQuestion(id: string, originalQuestionNumber: string): McqQuestionRecord {
+  return {
+    id,
+    examCode: "9702_w25_qp_11",
+    originalQuestionNumber,
+    syllabus: "9702",
+    session: "Oct/Nov",
+    year: "2025",
+    paper: "Paper 1",
+    paperVersion: "1",
+    marks: 1,
+    difficulty: "Medium",
+    reviewStatus: "Ready",
+    correctAnswer: "A",
+    searchableText: "",
+    questionJson: { metadata: {}, blocks: [], rendererVersion: 1 },
+    topics: [],
+    tags: [],
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z"
+  };
+}
