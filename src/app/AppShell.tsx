@@ -29,7 +29,7 @@ type AppShellProps = {
   children: ReactNode;
   theme: ThemeMode;
   title?: string;
-  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
+  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "help" | "about" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
   onThemeChange: (theme: ThemeMode) => void;
 };
 
@@ -183,11 +183,11 @@ export function AppShell({ activeItem, children, title = "Dashboard", theme, onN
         </nav>
 
         <div className="td-nav-footer">
-          <button type="button">
+          <button className={activeItem === "help" ? "is-active" : undefined} type="button" onClick={() => onNavigate("help")}>
             <CircleHelp size={18} />
             <span>Help</span>
           </button>
-          <button type="button">
+          <button className={activeItem === "about" ? "is-active" : undefined} type="button" onClick={() => onNavigate("about")}>
             <Info size={18} />
             <span>About</span>
           </button>

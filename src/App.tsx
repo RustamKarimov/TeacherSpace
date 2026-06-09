@@ -3,7 +3,7 @@ import { AppShell } from "./app/AppShell";
 import { teacherDeskApi } from "./lib/rendererApi";
 import type { AppSettings, McqQuestionRecord, ThemeMode, WorkspaceInfo } from "./types";
 
-type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag";
+type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "help" | "about" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag";
 
 const DashboardPage = lazy(() => import("./features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
 const ComponentGalleryPage = lazy(() => import("./features/componentGallery/ComponentGalleryPage").then((module) => ({ default: module.ComponentGalleryPage })));
@@ -95,6 +95,10 @@ export function App() {
           ? "Settings"
           : activeView === "component-gallery"
           ? "Component Gallery"
+          : activeView === "help"
+          ? "Help"
+          : activeView === "about"
+          ? "About"
           : activeView === "import-export"
             ? "Import / Export"
             : activeView === "structured-splitter"
@@ -182,6 +186,27 @@ export function App() {
             <SettingsPage settings={settings} workspace={workspace} onSettingsSaved={setSettings} />
           ) : activeView === "component-gallery" ? (
             <ComponentGalleryPage />
+          ) : activeView === "help" ? (
+            <InfoPage
+              eyebrow="TeacherDesk help"
+              title="Help"
+              sections={[
+                ["Start with your workspace", "TeacherDesk stores the database, generated exams, split papers, assets, backups, and logs inside the local workspace folder."],
+                ["Build questions first", "Use MCQ Builder for structured MCQ authoring, Question Bank to review saved questions, and Exam Generator to create student, teacher, and answer-key packages."],
+                ["Structured papers", "Use Structured Exams > Batch Splitter to validate a manifest, split all listed paper PDFs, and save question records into SQLite."],
+                ["Need something fixed?", "Use exact page names and screenshots when reporting problems. The app is local-first, so generated files remain on this device."]
+              ]}
+            />
+          ) : activeView === "about" ? (
+            <InfoPage
+              eyebrow="Local-first physics assessment workspace"
+              title="About TeacherDesk"
+              sections={[
+                ["Purpose", "TeacherDesk helps a Cambridge AS/A Level Physics teacher prepare, organise, generate, export, mark, and analyse assessment resources."],
+                ["Storage", "Questions, metadata, generated exams, split structured papers, and assets are stored locally. SQLite is the source of truth for records and relative file paths."],
+                ["Version focus", "Current production focus is MCQ authoring/generation, structured paper splitting/banking/generation, metadata management, and the foundation for analysis."]
+              ]}
+            />
           ) : activeView === "import-export" ? (
             <ImportExportPage workspace={workspace} />
           ) : activeView === "structured-splitter" ? (
@@ -197,6 +222,33 @@ export function App() {
       </AppShell>
       {notice ? <div className="td-app-notice">{notice}</div> : null}
     </div>
+  );
+}
+
+function InfoPage({
+  eyebrow,
+  sections,
+  title
+}: {
+  eyebrow: string;
+  sections: Array<[string, string]>;
+  title: string;
+}) {
+  return (
+    <main className="td-info-page">
+      <section className="td-info-hero">
+        <span>{eyebrow}</span>
+        <h2>{title}</h2>
+      </section>
+      <section className="td-info-grid">
+        {sections.map(([heading, body]) => (
+          <article className="td-info-card" key={heading}>
+            <h3>{heading}</h3>
+            <p>{body}</p>
+          </article>
+        ))}
+      </section>
+    </main>
   );
 }
 

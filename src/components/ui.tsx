@@ -169,27 +169,47 @@ export function SearchableSelect({
   placeholder?: string;
 }) {
   const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const filtered = useMemo(
     () => options.filter((option) => option.label.toLowerCase().includes(query.toLowerCase())),
     [options, query]
   );
 
   return (
-    <div className="td-field">
+    <div
+      className="td-field"
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget as Node | null;
+        if (!nextTarget || !event.currentTarget.contains(nextTarget)) setIsOpen(false);
+      }}
+      onFocus={() => setIsOpen(true)}
+    >
       <span>{label}</span>
       <div className="td-combobox">
         <Search size={15} />
         <input value={query} placeholder={placeholder} onChange={(event) => setQuery(event.target.value)} />
         <ChevronDown size={15} />
       </div>
-      <div className="td-option-list">
-        {filtered.map((option) => (
-          <button key={option.value} className={clsx(value === option.value && "is-selected")} onClick={() => onChange(option.value)} type="button">
-            <span>{option.label}</span>
-            {value === option.value ? <Check size={14} /> : null}
-          </button>
-        ))}
-      </div>
+      {isOpen ? (
+        <div className="td-option-list">
+          {filtered.map((option) => (
+            <button
+              key={option.value}
+              className={clsx(value === option.value && "is-selected")}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                onChange(option.value);
+                setQuery("");
+                setIsOpen(false);
+              }}
+              type="button"
+            >
+              <span>{option.label}</span>
+              {value === option.value ? <Check size={14} /> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -206,6 +226,7 @@ export function SearchableMultiSelect({
   onChange: (value: string[]) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const filtered = options.filter((option) => option.label.toLowerCase().includes(query.toLowerCase()));
 
   function toggle(value: string) {
@@ -213,7 +234,14 @@ export function SearchableMultiSelect({
   }
 
   return (
-    <div className="td-field">
+    <div
+      className="td-field"
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget as Node | null;
+        if (!nextTarget || !event.currentTarget.contains(nextTarget)) setIsOpen(false);
+      }}
+      onFocus={() => setIsOpen(true)}
+    >
       <span>{label}</span>
       <div className="td-combobox">
         <Search size={15} />
@@ -222,14 +250,16 @@ export function SearchableMultiSelect({
       <div className="td-token-row">
         {values.length === 0 ? <em>No selections</em> : values.map((value) => <span key={value}>{options.find((item) => item.value === value)?.label ?? value}</span>)}
       </div>
-      <div className="td-option-list">
-        {filtered.map((option) => (
-          <button key={option.value} onClick={() => toggle(option.value)} type="button">
-            <span>{option.label}</span>
-            {values.includes(option.value) ? <Check size={14} /> : null}
-          </button>
-        ))}
-      </div>
+      {isOpen ? (
+        <div className="td-option-list">
+          {filtered.map((option) => (
+            <button key={option.value} onMouseDown={(event) => event.preventDefault()} onClick={() => toggle(option.value)} type="button">
+              <span>{option.label}</span>
+              {values.includes(option.value) ? <Check size={14} /> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

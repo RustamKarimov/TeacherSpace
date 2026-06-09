@@ -46,6 +46,8 @@ button {
   --warning-soft: #fff6e8;
   --danger: #b14a2b;
   --danger-soft: #fff3ee;
+  --button-bg: #ffffff;
+  --button-hover: #f4f8ff;
   --shadow-soft: 0 14px 38px rgba(18, 33, 55, 0.08);
   --shadow-tight: 0 4px 16px rgba(18, 33, 55, 0.08);
 }
@@ -69,6 +71,8 @@ button {
   --warning-soft: #382a18;
   --danger: #e39178;
   --danger-soft: #3c2119;
+  --button-bg: #1d2a3d;
+  --button-hover: #25344a;
   --shadow-soft: 0 20px 48px rgba(0, 0, 0, 0.28);
   --shadow-tight: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
@@ -434,6 +438,7 @@ button {
 }
 
 .td-field {
+  position: relative;
   display: grid;
   gap: 6px;
   color: var(--text);
@@ -501,6 +506,11 @@ button {
 }
 
 .td-option-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 60;
   max-height: 138px;
   overflow: auto;
   border: 1px solid var(--border);
@@ -10807,4 +10817,393 @@ html[data-theme="dark"] :is(
 
 html[data-theme="dark"] .analysis-mini-distribution-row i {
   background: var(--accent) !important;
+}
+
+/* Utility pages */
+.td-info-page {
+  height: 100%;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 22px;
+  background: var(--page-bg);
+}
+
+.td-info-hero,
+.td-info-card {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: var(--shadow-tight);
+}
+
+.td-info-hero {
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+}
+
+.td-info-hero span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.td-info-hero h2,
+.td-info-card h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.td-info-hero h2 {
+  font-size: 25px;
+}
+
+.td-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.td-info-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.td-info-card h3 {
+  font-size: 15px;
+}
+
+.td-info-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Final dark-theme correction pass.
+   Keep printed A4/PDF content white; make every application control and panel inherit the theme. */
+html[data-theme="dark"] :is(
+  .td-gallery,
+  .td-info-page,
+  .td-component-stage,
+  .td-workspace main,
+  .mcq-editor-main,
+  .mcq-panel-body,
+  .mcq-inspector-scroll,
+  .mcq-metadata-panel,
+  .mcq-preview-panel,
+  .metadata-layout,
+  .settings-grid,
+  .analysis-layout,
+  .analysis-report-layout,
+  .structured-generator-layout
+) {
+  color: var(--text) !important;
+  background: var(--page-bg) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-gallery-hero,
+  .td-component-panel,
+  .td-component-stage,
+  .td-info-hero,
+  .td-info-card,
+  .td-modal-demo,
+  .td-print-preview,
+  .td-control-strip,
+  .td-picker,
+  .td-combobox,
+  .td-option-list,
+  .td-token-row span,
+  .td-status-badge,
+  .td-progress,
+  .td-callout,
+  .td-dropdown-menu,
+  .td-table,
+  .td-table th,
+  .td-table td,
+  .metadata-toolbar,
+  .metadata-card,
+  .metadata-table-card,
+  .metadata-detail-panel,
+  .metadata-linked-panel,
+  .metadata-linked-list,
+  .metadata-linked-list button,
+  .mcq-token-select,
+  .mcq-token-search,
+  .mcq-token-suggestions,
+  .mcq-token-suggestions button,
+  .mcq-token-row span,
+  .mcq-preview-note,
+  .mcq-preview-controls,
+  .mcq-preview-settings-strip,
+  .mcq-preview-outline,
+  .mcq-preview-status,
+  .mcq-metadata-detail-card,
+  .mcq-metadata-detail-card section,
+  .mcq-metadata-linked-list,
+  .mcq-metadata-linked-list button,
+  .mcq-metadata-detail-empty,
+  .mcq-generator-card,
+  .mcq-generator-selection,
+  .mcq-generator-token-row span,
+  .mcq-generator-token-row button,
+  .mcq-generator-quick-topics button,
+  .mcq-generator-topic-picker,
+  .mcq-generator-topic-picker button,
+  .mcq-generator-file,
+  .mcq-generator-check,
+  .mcq-generator-output-files span,
+  .mcq-generator-distribution-table,
+  .analysis-report-metric,
+  .analysis-performance-row,
+  .analysis-bar-value,
+  .analysis-mini-distribution,
+  .analysis-term-overview-list article,
+  .analysis-term-overview-metrics span,
+  .analysis-question-paper-mini,
+  .structured-generator-card,
+  .structured-generator-modes,
+  .structured-generator-modes button,
+  .structured-generator-check,
+  .structured-generator-warnings,
+  .structured-generator-actions,
+  .settings-hero,
+  .settings-field input,
+  .settings-check-row,
+  .settings-check
+) {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-component-panel,
+  .td-combobox,
+  .td-picker,
+  .td-token-row span,
+  .td-status-badge,
+  .td-table th,
+  .td-option-list button:hover,
+  .td-option-list button.is-selected,
+  .td-dropdown-menu button:hover,
+  .mcq-token-search,
+  .mcq-token-suggestions button:hover,
+  .mcq-token-suggestions button.is-selected,
+  .mcq-token-row button,
+  .mcq-preview-note,
+  .mcq-preview-outline button,
+  .mcq-preview-status.is-muted,
+  .mcq-metadata-linked-list button,
+  .mcq-generator-file,
+  .mcq-generator-check,
+  .analysis-performance-row,
+  .analysis-bar-value,
+  .metadata-linked-list button,
+  .structured-generator-modes button,
+  .settings-hero
+) {
+  background: var(--surface-soft) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-button,
+  .td-icon-button,
+  .td-segment,
+  .td-tabs button,
+  .td-pagination button,
+  .td-option-list button,
+  .td-dropdown-menu button,
+  .metadata-tabs button,
+  .metadata-action-button,
+  .metadata-linked-panel button,
+  .mcq-token-search input,
+  .mcq-token-suggestions button,
+  .mcq-preview-controls button,
+  .mcq-preview-controls select,
+  .mcq-preview-settings-strip button,
+  .mcq-preview-outline button,
+  .mcq-metadata-detail-card input,
+  .mcq-metadata-detail-card select,
+  .mcq-metadata-detail-card textarea,
+  .mcq-metadata-linked-list button,
+  .mcq-generator-card input,
+  .mcq-generator-card select,
+  .mcq-generator-card textarea,
+  .mcq-generator-card button,
+  .mcq-generator-file input::file-selector-button,
+  .analysis-report-page button,
+  .analysis-report-page input,
+  .analysis-report-page select,
+  .structured-generator-card input,
+  .structured-generator-card select,
+  .structured-generator-card textarea,
+  .structured-generator-card button,
+  .settings-page button,
+  .settings-page input
+) {
+  color: var(--text) !important;
+  background: var(--button-bg, var(--surface-raised)) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-button-primary,
+  .td-segment.is-active,
+  .td-tabs button.is-active,
+  .td-pagination button.is-active,
+  .metadata-tabs button.is-active,
+  .metadata-linked-panel .is-active,
+  .mcq-preview-controls button.is-active,
+  .mcq-preview-settings-strip button.is-active,
+  .mcq-preview-outline button.is-active,
+  .mcq-generator-mode-tabs button.is-active,
+  .mcq-generator-copy-toggle button.is-active,
+  .mcq-generator-row-logic button.is-active,
+  .structured-generator-modes button.is-active,
+  .structured-generator-card button.is-active
+) {
+  color: #ffffff !important;
+  background: color-mix(in srgb, var(--accent) 78%, #000) !important;
+  border-color: var(--accent) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-field > span,
+  .td-field em,
+  .td-card p,
+  .td-info-card p,
+  .td-gallery-hero p,
+  .td-token-row em,
+  .td-status-badge,
+  .metadata-card span,
+  .metadata-detail-panel span,
+  .metadata-linked-panel span,
+  .mcq-token-select span,
+  .mcq-preview-note span,
+  .mcq-preview-status span,
+  .mcq-metadata-detail-card span,
+  .mcq-metadata-linked-list span,
+  .mcq-generator-card p,
+  .mcq-generator-card span,
+  .analysis-report-page span,
+  .analysis-report-page small,
+  .analysis-report-metric span,
+  .analysis-report-metric small,
+  .analysis-performance-row small,
+  .structured-generator-card p,
+  .structured-generator-card span,
+  .settings-card span,
+  .settings-card small
+) {
+  color: var(--muted) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-info-hero h2,
+  .td-info-card h3,
+  .td-component-panel h3,
+  .td-table td,
+  .td-table strong,
+  .metadata-card strong,
+  .metadata-detail-panel strong,
+  .metadata-linked-panel strong,
+  .mcq-token-suggestions button,
+  .mcq-preview-note strong,
+  .mcq-metadata-detail-card strong,
+  .mcq-metadata-linked-list strong,
+  .mcq-generator-card strong,
+  .analysis-report-page h2,
+  .analysis-report-page h3,
+  .analysis-report-page strong,
+  .analysis-report-metric strong,
+  .analysis-performance-row strong,
+  .structured-generator-card strong,
+  .settings-card strong
+) {
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-report-metric.is-good,
+  .analysis-performance-row.is-good,
+  .metadata-state-pill.is-clean,
+  .mcq-preview-status.is-ok
+) {
+  color: var(--success) !important;
+  background: var(--success-soft) !important;
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-report-metric.is-warning,
+  .analysis-performance-row.is-warning,
+  .metadata-count-pill.is-warning,
+  .metadata-state-pill.is-warning,
+  .mcq-preview-status.is-warning
+) {
+  color: var(--warning) !important;
+  background: var(--warning-soft) !important;
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-report-metric.is-danger,
+  .analysis-performance-row.is-danger,
+  .metadata-state-pill.is-danger
+) {
+  color: var(--danger) !important;
+  background: var(--danger-soft) !important;
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] :is(
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  .td-button:disabled,
+  .td-icon-button:disabled
+) {
+  color: var(--subtle) !important;
+  background: color-mix(in srgb, var(--surface-soft) 76%, #000) !important;
+  border-color: color-mix(in srgb, var(--border) 72%, #000) !important;
+  opacity: 0.72;
+}
+
+html[data-theme="dark"] :is(
+  .td-a4-page,
+  .td-a4-page *,
+  .td-preview-image,
+  .td-preview-image *,
+  .mcq-a4-page,
+  .mcq-a4-page *,
+  .mcq-a4-page-shell,
+  .mcq-a4-page-shell *,
+  .mcq-bank-a4,
+  .mcq-bank-a4 *,
+  .mcq-generator-a4-mini,
+  .mcq-generator-a4-mini *,
+  .analysis-question-paper-mini,
+  .analysis-question-paper-mini *
+) {
+  color: #111827 !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-a4-page,
+  .td-preview-image,
+  .mcq-a4-page,
+  .mcq-a4-page-shell,
+  .mcq-bank-a4,
+  .mcq-generator-a4-mini,
+  .analysis-question-paper-mini
+) {
+  background: #ffffff !important;
+  border-color: #d5dbe5 !important;
 }
