@@ -29,7 +29,7 @@ type AppShellProps = {
   children: ReactNode;
   theme: ThemeMode;
   title?: string;
-  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "help" | "about" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
+  onNavigate: (item: "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "help" | "about" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag") => void;
   onThemeChange: (theme: ThemeMode) => void;
 };
 
@@ -182,10 +182,6 @@ export function AppShell({ activeItem, children, title = "Dashboard", theme, onN
                 <button className={activeItem === "metadata" || activeItem === "structured-metadata" ? "is-active" : undefined} type="button" onClick={() => onNavigate("metadata")}>
                   <SlidersHorizontal size={14} />
                   <span>Metadata</span>
-                </button>
-                <button className={activeItem === "component-gallery" ? "is-active" : undefined} type="button" onClick={() => onNavigate("component-gallery")}>
-                  <SlidersHorizontal size={14} />
-                  <span>Component Gallery</span>
                 </button>
               </div>
             ) : null}

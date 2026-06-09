@@ -11301,3 +11301,218 @@ html[data-theme="dark"] :is(
   background: #ffffff !important;
   border-color: #d5dbe5 !important;
 }
+
+/* Dark theme completion for feature-specific panels that predate the token system. */
+html[data-theme="dark"] :is(
+  .structured-meta-page,
+  .structured-meta-toolbar,
+  .structured-meta-content,
+  .structured-meta-list-card,
+  .structured-meta-detail-card,
+  .structured-meta-list-card > header,
+  .structured-meta-detail-card > header,
+  .structured-meta-selection-toolbar,
+  .structured-meta-table,
+  .structured-meta-table-head,
+  .structured-meta-pagination,
+  .structured-meta-logic-card,
+  .structured-meta-question-actions,
+  .structured-meta-linked-list,
+  .structured-meta-detail-empty,
+  .mcq-metadata-page,
+  .mcq-metadata-toolbar,
+  .mcq-metadata-content,
+  .mcq-metadata-list-card,
+  .mcq-metadata-detail-card,
+  .mcq-metadata-list-card > header,
+  .mcq-metadata-detail-card > header,
+  .mcq-metadata-selection-toolbar,
+  .mcq-metadata-table,
+  .mcq-metadata-table-head,
+  .mcq-metadata-pagination,
+  .mcq-metadata-logic-card,
+  .mcq-metadata-question-actions,
+  .mcq-metadata-linked-list,
+  .mcq-metadata-detail-empty,
+  .mcq-generator-topic-row,
+  .mcq-generator-row-topic-editor,
+  .mcq-generator-row-topic-add,
+  .mcq-topic-dropdown,
+  .mcq-topic-dropdown-control,
+  .mcq-topic-dropdown-menu,
+  .mcq-generator-basket-summary,
+  .structured-bank-metadata-editor,
+  .structured-topic-rule,
+  .structured-topic-picker,
+  .structured-topic-custom-row,
+  .structured-selection-card,
+  .analysis-question-preview-card
+) {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-search,
+  .structured-meta-search input,
+  .structured-meta-tabs,
+  .structured-meta-tabs button,
+  .structured-meta-toolbar button,
+  .structured-meta-list-card button,
+  .structured-meta-detail-card button,
+  .structured-meta-pagination button,
+  .structured-meta-pagination select,
+  .structured-meta-field input,
+  .structured-meta-logic-toggle,
+  .structured-meta-logic-toggle button,
+  .structured-meta-linked-list button,
+  .mcq-metadata-search,
+  .mcq-metadata-search input,
+  .mcq-metadata-tabs,
+  .mcq-metadata-tabs button,
+  .mcq-metadata-icon-action,
+  .mcq-metadata-selection-toolbar button,
+  .mcq-metadata-pagination button,
+  .mcq-metadata-pagination select,
+  .mcq-metadata-field input,
+  .mcq-metadata-logic-toggle,
+  .mcq-metadata-logic-toggle button,
+  .mcq-metadata-linked-list button,
+  .mcq-generator-topic-row input,
+  .mcq-generator-topic-row select,
+  .mcq-topic-dropdown input,
+  .mcq-topic-dropdown-control button,
+  .mcq-topic-dropdown-menu button,
+  .mcq-topic-dropdown-menu span,
+  .mcq-generator-row-topic-add button,
+  .mcq-generator-row-logic button,
+  .mcq-generator-row-remove,
+  .structured-bank-metadata-editor input,
+  .structured-bank-metadata-editor select,
+  .structured-bank-metadata-editor textarea,
+  .structured-bank-metadata-editor header button,
+  .structured-topic-rule input,
+  .structured-topic-rule select,
+  .structured-topic-rule button
+) {
+  background: var(--button-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-tabs button.is-active,
+  .structured-meta-logic-toggle button.is-active,
+  .mcq-metadata-tabs button.is-active,
+  .mcq-metadata-logic-toggle button.is-active,
+  .mcq-generator-row-logic button.is-active
+) {
+  background: color-mix(in srgb, var(--accent) 78%, #000) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-table > button,
+  .structured-meta-linked-list button,
+  .mcq-metadata-table button,
+  .mcq-metadata-linked-list button
+) {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-table > button:hover,
+  .structured-meta-table > button.is-selected,
+  .structured-meta-linked-list button:hover,
+  .structured-meta-linked-list button.is-selected,
+  .mcq-metadata-table button:hover,
+  .mcq-metadata-table button.is-selected,
+  .mcq-metadata-linked-list button:hover,
+  .mcq-metadata-linked-list button.is-selected
+) {
+  background: var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-list-card h2,
+  .structured-meta-detail-card header strong,
+  .structured-meta-table strong,
+  .structured-meta-linked-list strong,
+  .mcq-metadata-list-card h2,
+  .mcq-metadata-detail-card header strong,
+  .mcq-metadata-table strong,
+  .mcq-metadata-linked-list strong,
+  .structured-bank-metadata-editor header strong,
+  .structured-topic-picker label,
+  .structured-topic-rule .topic-row-head strong
+) {
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-list-card header span,
+  .structured-meta-detail-card header span,
+  .structured-meta-selection-toolbar span,
+  .structured-meta-field span,
+  .structured-meta-linked-list em,
+  .structured-meta-linked-list small,
+  .mcq-metadata-list-card header span,
+  .mcq-metadata-detail-card header span,
+  .mcq-metadata-selection-toolbar span,
+  .mcq-metadata-field,
+  .mcq-metadata-linked-list em,
+  .mcq-metadata-linked-list small,
+  .structured-bank-metadata-editor label span
+) {
+  color: var(--muted) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-health .is-ok,
+  .structured-meta-table em.is-ok,
+  .structured-meta-warning-card.is-ok,
+  .mcq-metadata-health .is-ok,
+  .mcq-metadata-table em.is-ok,
+  .mcq-metadata-warning-card.is-ok
+) {
+  background: var(--success-soft) !important;
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border)) !important;
+  color: var(--success) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-meta-health .is-warning,
+  .structured-meta-table em.is-warning,
+  .structured-meta-warning-card,
+  .mcq-metadata-health .is-warning,
+  .mcq-metadata-table em.is-warning,
+  .mcq-metadata-warning-card
+) {
+  background: var(--warning-soft) !important;
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--border)) !important;
+  color: var(--warning) !important;
+}
+
+html[data-theme="dark"] .analysis-question-paper-mini,
+html[data-theme="dark"] .analysis-question-paper-mini * {
+  color: #111827 !important;
+}
+
+html[data-theme="dark"] .analysis-question-paper-mini {
+  background: #ffffff !important;
+  border-color: #d5dbe5 !important;
+  box-shadow: inset 0 0 0 1px #eef2f7 !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-question-paper-mini table,
+  .analysis-question-paper-mini th,
+  .analysis-question-paper-mini td
+) {
+  border-color: #111827 !important;
+}

@@ -3,10 +3,9 @@ import { AppShell } from "./app/AppShell";
 import { teacherDeskApi } from "./lib/rendererApi";
 import type { AppSettings, McqQuestionRecord, ThemeMode, WorkspaceInfo } from "./types";
 
-type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "component-gallery" | "help" | "about" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag";
+type AppView = "dashboard" | "add-edit" | "question-bank" | "exam-generator" | "metadata" | "settings" | "help" | "about" | "import-export" | "structured-splitter" | "structured-bank" | "structured-generator" | "structured-metadata" | "analysis-overview" | "analysis-students" | "analysis-mcq-entry" | "analysis-structured-entry" | "analysis-student" | "analysis-question" | "analysis-exam" | "analysis-topic" | "analysis-tag";
 
 const DashboardPage = lazy(() => import("./features/dashboard/DashboardPage").then((module) => ({ default: module.DashboardPage })));
-const ComponentGalleryPage = lazy(() => import("./features/componentGallery/ComponentGalleryPage").then((module) => ({ default: module.ComponentGalleryPage })));
 const AnalysisPage = lazy(() => import("./features/analysis/AnalysisPage").then((module) => ({ default: module.AnalysisPage })));
 const ImportExportPage = lazy(() => import("./features/importExport/ImportExportPage").then((module) => ({ default: module.ImportExportPage })));
 const QuestionBankPage = lazy(() => import("./features/mcq/bank/QuestionBankPage").then((module) => ({ default: module.QuestionBankPage })));
@@ -93,8 +92,6 @@ export function App() {
           ? "Metadata"
         : activeView === "settings"
           ? "Settings"
-          : activeView === "component-gallery"
-          ? "Component Gallery"
           : activeView === "help"
           ? "Help"
           : activeView === "about"
@@ -184,8 +181,6 @@ export function App() {
             <StructuredMetadataPage />
           ) : activeView === "settings" ? (
             <SettingsPage settings={settings} workspace={workspace} onSettingsSaved={setSettings} />
-          ) : activeView === "component-gallery" ? (
-            <ComponentGalleryPage />
           ) : activeView === "help" ? (
             <InfoPage
               eyebrow="TeacherDesk help"
