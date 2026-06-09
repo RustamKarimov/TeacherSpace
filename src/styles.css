@@ -10330,3 +10330,334 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: var(--border-strong);
 }
+
+/* Dark theme hardening by feature prefix.
+   This catches older feature-specific light rules without touching rendered paper pages. */
+html[data-theme="dark"] :is(
+  [class^="dashboard-"],
+  [class*=" dashboard-"],
+  [class^="import-export-"],
+  [class*=" import-export-"],
+  [class^="metadata-"],
+  [class*=" metadata-"],
+  [class^="settings-"],
+  [class*=" settings-"],
+  [class^="analysis-"],
+  [class*=" analysis-"],
+  [class^="structured-"],
+  [class*=" structured-"],
+  [class^="mcq-"],
+  [class*=" mcq-"]
+) {
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] :is(
+  .dashboard-hero,
+  .dashboard-stat-card,
+  .dashboard-workflow-card,
+  .dashboard-system,
+  .dashboard-info-row,
+  .import-export-intro,
+  .import-export-card,
+  .import-export-result,
+  .import-export-rules,
+  .metadata-table-card,
+  .metadata-detail-panel,
+  .metadata-linked-panel,
+  .settings-card,
+  .analysis-panel,
+  .analysis-student-editor,
+  .analysis-exam-card,
+  .analysis-table-wrap,
+  .analysis-summary-card,
+  .analysis-report-card,
+  .structured-card,
+  .structured-table-card,
+  .structured-bank-table-card,
+  .structured-bank-preview,
+  .structured-generator-panel,
+  .structured-generator-output,
+  .structured-generator-preview,
+  .structured-metadata-panel,
+  .mcq-toolbar,
+  .mcq-block-card,
+  .mcq-right-panel,
+  .mcq-inspector-header,
+  .mcq-inspector-section,
+  .mcq-metadata-warning-card,
+  .mcq-bank-table-wrap,
+  .mcq-bank-preview,
+  .mcq-bank-meta-summary,
+  .mcq-bank-meta-card,
+  .mcq-bank-metadata-dialog,
+  .mcq-generator-panel,
+  .mcq-generator-output,
+  .mcq-generator-side-panel,
+  .mcq-generator-preview,
+  .mcq-generator-process,
+  .mcq-generator-basket-list,
+  .mcq-generator-basket-summary,
+  .mcq-generator-distribution-table
+) {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .dashboard-stat-icon,
+  .dashboard-workflow-card > span,
+  .import-export-summary span,
+  .metadata-count-pill,
+  .metadata-state-pill,
+  .settings-check,
+  .analysis-chip,
+  .analysis-placeholder,
+  .analysis-class-menu,
+  .analysis-answer-cell-wrap,
+  .structured-metric,
+  .structured-path-field > div,
+  .structured-filter-menu,
+  .structured-bank-basket,
+  .structured-issue,
+  .mcq-block-type-icon,
+  .mcq-bank-filter-panel,
+  .mcq-bank-filter-group,
+  .mcq-bank-filter-options,
+  .mcq-bank-meta-grid > div,
+  .mcq-bank-token-line strong,
+  .mcq-generator-callout,
+  .mcq-generator-check,
+  .mcq-generator-token-row button,
+  .mcq-generator-quick-topics button,
+  .mcq-generator-output-files span,
+  .mcq-generator-title-notice,
+  .mcq-generator-preview-empty,
+  .mcq-option-source-row,
+  .mcq-table-cell-editor,
+  .mcq-selected-option-image-preview
+) {
+  color: var(--text) !important;
+  background: var(--surface-soft) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  button,
+  input,
+  select,
+  textarea,
+  .dashboard-hero button,
+  .dashboard-workflow-card button,
+  .import-export-card button,
+  .metadata-card button,
+  .settings-card button,
+  .analysis-page button,
+  .structured-bank-page button,
+  .structured-generator-page button,
+  .structured-splitter-page button,
+  .mcq-editor-page button,
+  .mcq-bank-page button,
+  .mcq-generator-page button,
+  .mcq-generator-file input::file-selector-button
+) {
+  color: var(--text) !important;
+  background: var(--button-bg) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  button:hover,
+  .dashboard-hero button:hover,
+  .dashboard-workflow-card button:hover,
+  .import-export-card button:hover,
+  .metadata-card button:hover,
+  .settings-card button:hover,
+  .analysis-page button:hover,
+  .structured-bank-page button:hover,
+  .structured-generator-page button:hover,
+  .structured-splitter-page button:hover,
+  .mcq-editor-page button:hover,
+  .mcq-bank-page button:hover,
+  .mcq-generator-page button:hover
+) {
+  background: var(--button-hover) !important;
+}
+
+html[data-theme="dark"] :is(
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  .mcq-generator-folder-actions button:disabled,
+  .mcq-generator-generate:disabled
+) {
+  color: var(--muted) !important;
+  background: color-mix(in srgb, var(--surface-soft) 82%, #000) !important;
+  border-color: var(--border) !important;
+  opacity: 0.75;
+}
+
+html[data-theme="dark"] :is(
+  .td-button-primary,
+  .dashboard-hero button,
+  .mcq-primary-action,
+  .mcq-bank-primary,
+  .mcq-generator-generate,
+  .analysis-primary-button,
+  .structured-primary-button,
+  .structured-splitter-toolbar button.is-primary
+):not(:disabled) {
+  color: #ffffff !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+html[data-theme="dark"] :is(
+  .td-theme-option.is-active,
+  .mcq-panel-tabs button.is-active,
+  .mcq-generator-mode-tabs button.is-active,
+  .mcq-generator-copy-toggle button.is-active,
+  .mcq-generator-row-logic button.is-active,
+  .mcq-segment-row button.is-active,
+  .mcq-answer-row button.is-active,
+  .analysis-tab.is-active,
+  .analysis-exam-card.is-selected,
+  .structured-tabs button.is-active,
+  .structured-filter-mode button.is-active,
+  .metadata-tabs button.is-active
+) {
+  color: #ffffff !important;
+  background: color-mix(in srgb, var(--accent) 76%, #000) !important;
+  border-color: var(--accent) !important;
+}
+
+html[data-theme="dark"] :is(
+  .dashboard-hero span,
+  .dashboard-stat-card > span:not(.dashboard-stat-icon),
+  .dashboard-stat-card em,
+  .dashboard-workflow-card p,
+  .dashboard-info-row span,
+  .import-export-card p,
+  .import-export-card span,
+  .metadata-card span,
+  .settings-card span,
+  .analysis-page span,
+  .analysis-page small,
+  .structured-bank-page span,
+  .structured-bank-page small,
+  .structured-generator-page span,
+  .structured-generator-page small,
+  .mcq-editor-page span,
+  .mcq-editor-page small,
+  .mcq-bank-page span,
+  .mcq-bank-page small,
+  .mcq-generator-page span,
+  .mcq-generator-page small
+) {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] :is(
+  .dashboard-hero h2,
+  .dashboard-stat-card strong,
+  .dashboard-workflow-card h3,
+  .dashboard-info-row strong,
+  .import-export-card strong,
+  .metadata-card strong,
+  .settings-card strong,
+  .analysis-page strong,
+  .analysis-page h2,
+  .analysis-page h3,
+  .structured-bank-page strong,
+  .structured-bank-page h2,
+  .structured-bank-page h3,
+  .structured-generator-page strong,
+  .structured-generator-page h2,
+  .structured-generator-page h3,
+  .mcq-editor-page strong,
+  .mcq-editor-page h2,
+  .mcq-editor-page h3,
+  .mcq-bank-page strong,
+  .mcq-bank-page h2,
+  .mcq-bank-page h3,
+  .mcq-generator-page strong,
+  .mcq-generator-page h2,
+  .mcq-generator-page h3
+) {
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] :is(
+  .mcq-a4-page,
+  .mcq-a4-page *,
+  .mcq-a4-page-shell,
+  .mcq-a4-page-shell *,
+  .mcq-bank-a4,
+  .mcq-bank-a4 *,
+  .mcq-generator-a4-mini,
+  .mcq-generator-a4-mini *,
+  .mcq-generator-preview iframe,
+  .structured-preview-card iframe,
+  .structured-live-preview iframe
+) {
+  color: #111827;
+}
+
+html[data-theme="dark"] :is(
+  .mcq-a4-page,
+  .mcq-a4-page-shell,
+  .mcq-bank-a4,
+  .mcq-generator-a4-mini
+) {
+  background: #ffffff !important;
+}
+
+html[data-theme="dark"] :is(button, .td-button, .td-icon-button) :is(span, strong, small) {
+  color: inherit !important;
+}
+
+html[data-theme="dark"] .td-workbench {
+  color: var(--text) !important;
+  background: var(--page-bg) !important;
+}
+
+html[data-theme="dark"] :is(
+  .mcq-generator-side,
+  .mcq-generator-output,
+  .mcq-generator-preview,
+  .structured-generator-side,
+  .structured-generator-output,
+  .structured-generator-preview
+) {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .mcq-generator-snippets span,
+  .structured-generator-snippets span
+) {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border)) !important;
+}
+
+html[data-theme="dark"] :is(
+  .mcq-generator-folder small,
+  .mcq-generator-title-notice,
+  .structured-generator-notice,
+  .structured-generator-folder small
+) {
+  color: var(--warning) !important;
+  background: var(--warning-soft) !important;
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] .mcq-latex-preview {
+  color: var(--text) !important;
+  background: var(--surface-soft) !important;
+  border-color: var(--border) !important;
+}
