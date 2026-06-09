@@ -252,12 +252,18 @@ export function ExamAnalysisPage({ overview }: ReportProps) {
 }
 
 export function TopicAnalysisPage({ overview }: ReportProps) {
-  const [selectedId, setSelectedId] = useState(sampleTopics[0].id);
-  const selected = sampleTopics.find((item) => item.id === selectedId) ?? sampleTopics[0];
+  const topicStats = overview?.topicStats ?? [];
+  const selectorItems = useMemo(() => termStatsToSelectorItems(topicStats, sampleTopics), [topicStats]);
+  const [selectedId, setSelectedId] = useState(selectorItems[0]?.id ?? "");
+  const selected = selectorItems.find((item) => item.id === selectedId) ?? selectorItems[0] ?? sampleTopics[0];
+  const selectedStats = topicStats.find((item) => item.id === selected.id);
+  const questionCount = (selectedStats?.mcqCount ?? 0) + (selectedStats?.structuredCount ?? 0);
+  const average = selectedStats?.successPercent ?? selected.score;
+  const hasResults = selectedStats?.successPercent !== null && selectedStats?.successPercent !== undefined;
 
   return (
     <AnalysisReportShell
-      aside={<SelectorPanel items={sampleTopics} label="Topic" placeholder="Search topic..." selectedId={selected.id} onSelect={setSelectedId} />}
+      aside={<SelectorPanel items={selectorItems} label="Topic" placeholder="Search topic..." selectedId={selected.id} onSelect={setSelectedId} />}
       title="Topic analysis"
     >
       <SummaryHeader
@@ -268,10 +274,10 @@ export function TopicAnalysisPage({ overview }: ReportProps) {
         actions={<Pill>{overview?.questions.structured ?? 0} structured saved</Pill>}
       />
       <MetricGrid metrics={[
-        { label: "Average", value: `${selected.score}%`, detail: "All attempts", tone: scoreTone(selected.score) },
-        { label: "Questions", value: "53", detail: "MCQ and structured" },
-        { label: "Classes affected", value: "4", detail: "Across active year" },
-        { label: "Difficulty mix", value: "31%", detail: "Difficult or very difficult", tone: "warning" }
+        { label: "Average", value: hasResults ? `${Math.round(average)}%` : "No results", detail: "All captured attempts", tone: hasResults ? scoreTone(average) : undefined },
+        { label: "Questions", value: questionCount, detail: `${selectedStats?.mcqCount ?? 0} MCQ, ${selectedStats?.structuredCount ?? 0} structured` },
+        { label: "Used in exams", value: selectedStats?.usedCount ?? 0, detail: `${selectedStats?.unusedCount ?? 0} not used yet` },
+        { label: "Attempts", value: selectedStats?.attemptsCount ?? 0, detail: "Across MCQ and structured capture" }
       ]} />
       <SplitSections
         left={<TrendPanel title="Performance trend" />}
@@ -300,13 +306,19 @@ export function TopicAnalysisPage({ overview }: ReportProps) {
 }
 
 export function TagAnalysisPage({ overview }: ReportProps) {
-  const [selectedId, setSelectedId] = useState(sampleTags[0].id);
-  const selected = sampleTags.find((item) => item.id === selectedId) ?? sampleTags[0];
+  const tagStats = overview?.tagStats ?? [];
+  const selectorItems = useMemo(() => termStatsToSelectorItems(tagStats, sampleTags), [tagStats]);
+  const [selectedId, setSelectedId] = useState(selectorItems[0]?.id ?? "");
+  const selected = selectorItems.find((item) => item.id === selectedId) ?? selectorItems[0] ?? sampleTags[0];
+  const selectedStats = tagStats.find((item) => item.id === selected.id);
+  const questionCount = (selectedStats?.mcqCount ?? 0) + (selectedStats?.structuredCount ?? 0);
+  const average = selectedStats?.successPercent ?? selected.score;
+  const hasResults = selectedStats?.successPercent !== null && selectedStats?.successPercent !== undefined;
   const indexedQuestions = (overview?.questions.mcq ?? 0) + (overview?.questions.structured ?? 0);
 
   return (
     <AnalysisReportShell
-      aside={<SelectorPanel items={sampleTags} label="Tag" placeholder="Search tag..." selectedId={selected.id} onSelect={setSelectedId} />}
+      aside={<SelectorPanel items={selectorItems} label="Tag" placeholder="Search tag..." selectedId={selected.id} onSelect={setSelectedId} />}
       title="Tag analysis"
     >
       <SummaryHeader
@@ -317,10 +329,10 @@ export function TagAnalysisPage({ overview }: ReportProps) {
         actions={<Pill>{indexedQuestions} questions indexed</Pill>}
       />
       <MetricGrid metrics={[
-        { label: "Average", value: `${selected.score}%`, detail: "Across linked questions", tone: scoreTone(selected.score) },
-        { label: "Attempts", value: "82", detail: "Captured responses" },
-        { label: "Weakest class", value: "13A", detail: "49% average", tone: "danger" },
-        { label: "Most linked topic", value: "Uncertainty", detail: "18 questions" }
+        { label: "Average", value: hasResults ? `${Math.round(average)}%` : "No results", detail: "Across linked questions", tone: hasResults ? scoreTone(average) : undefined },
+        { label: "Questions", value: questionCount, detail: `${selectedStats?.mcqCount ?? 0} MCQ, ${selectedStats?.structuredCount ?? 0} structured` },
+        { label: "Used in exams", value: selectedStats?.usedCount ?? 0, detail: `${selectedStats?.unusedCount ?? 0} not used yet` },
+        { label: "Attempts", value: selectedStats?.attemptsCount ?? 0, detail: "Captured responses and marks" }
       ]} />
       <SplitSections
         left={<TrendPanel title="Performance trend" />}
@@ -571,6 +583,25 @@ function ActionPanel({ kind }: { kind: "topic" | "tag" }) {
       </div>
     </ReportSection>
   );
+}
+
+function termStatsToSelectorItems(
+  rows: NonNullable<AnalysisOverview["topicStats"]>,
+  fallback: SelectorItem[]
+): SelectorItem[] {
+  if (!rows.length) return fallback;
+  return rows.map((row) => {
+    const questionCount = row.mcqCount + row.structuredCount;
+    return {
+      id: row.id,
+      title: row.name,
+      meta: `${questionCount} questions - ${row.mcqCount} MCQ, ${row.structuredCount} structured`,
+      detail: row.successPercent === null
+        ? `${row.usedCount} used, ${row.unusedCount} unused`
+        : `${Math.round(row.successPercent)}% success - ${row.attemptsCount} attempts`,
+      score: row.successPercent ?? 0
+    };
+  });
 }
 
 function BarValue({ value }: { value: number }) {
