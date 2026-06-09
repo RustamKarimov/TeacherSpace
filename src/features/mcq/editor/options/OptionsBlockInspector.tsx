@@ -10,7 +10,6 @@ import {
   Check,
   Clipboard,
   Columns3,
-  Copy,
   Eye,
   Image as ImageIcon,
   Italic,
@@ -302,10 +301,6 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
       ...current,
       options: current.options.map((option) => (option.id === optionId ? { ...option, text: "", image: undefined, contentType: "text" } : option))
     }));
-  }
-
-  function duplicateOption(option: McqOption) {
-    updateOption(option.id, option.text);
   }
 
   function updateSelectedImage(patch: Partial<NonNullable<McqOption["image"]>>) {
@@ -624,10 +619,12 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
                 value={option.text}
                 onChange={(event) => updateOption(option.id, event.target.value)}
               />
-              <span className={clsx("mcq-option-thumb", option.image?.dataUrl && "has-image")}>
-                {option.image?.dataUrl ? <img alt="" src={option.image.dataUrl} /> : <ImageIcon size={14} />}
-              </span>
-              <button aria-label={`Insert LaTeX in option ${option.letter}`} type="button" onClick={() => setSelectedOption(option.id)}>
+              <button
+                aria-label={`Edit LaTeX for option ${option.letter}`}
+                title={`Edit LaTeX for option ${option.letter}`}
+                type="button"
+                onClick={() => setSelectedOption(option.id)}
+              >
                 <Baseline size={14} />
               </button>
               <input
@@ -639,16 +636,28 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
                 type="file"
                 onChange={(event) => loadOptionImage(option.id, event.target.files?.[0])}
               />
-              <button aria-label={`Add image to option ${option.letter}`} type="button" onClick={() => optionImageRefs.current[option.id]?.click()}>
+              <button
+                aria-label={`${option.image?.dataUrl ? "Replace" : "Choose"} image for option ${option.letter}`}
+                title={`${option.image?.dataUrl ? "Replace" : "Choose"} image for option ${option.letter}`}
+                type="button"
+                onClick={() => optionImageRefs.current[option.id]?.click()}
+              >
                 <ImageIcon size={14} />
               </button>
-              <button aria-label={`Paste image to option ${option.letter}`} type="button" onClick={() => void pasteOptionImage(option.id)}>
+              <button
+                aria-label={`Paste image from clipboard into option ${option.letter}`}
+                title={`Paste image from clipboard into option ${option.letter}`}
+                type="button"
+                onClick={() => void pasteOptionImage(option.id)}
+              >
                 <Clipboard size={14} />
               </button>
-              <button aria-label={`Duplicate option ${option.letter}`} type="button" onClick={() => duplicateOption(option)}>
-                <Copy size={14} />
-              </button>
-              <button aria-label={`Clear option ${option.letter}`} type="button" onClick={() => clearOption(option.id)}>
+              <button
+                aria-label={`Clear option ${option.letter}`}
+                title={`Clear option ${option.letter}`}
+                type="button"
+                onClick={() => clearOption(option.id)}
+              >
                 <Trash2 size={14} />
               </button>
             </label>

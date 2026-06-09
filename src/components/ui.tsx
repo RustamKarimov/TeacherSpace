@@ -82,16 +82,23 @@ export function IconButton({
 }
 
 export function ThemeToggle({ value, onChange }: { value: ThemeMode; onChange: (value: ThemeMode) => void }) {
+  const nextTheme = value === "light" ? "dark" : "light";
+
   return (
-    <SegmentedControl
-      label="Theme"
-      value={value}
-      onChange={(next) => onChange(next as ThemeMode)}
-      options={[
-        { label: "Light", value: "light", icon: <Sun size={15} /> },
-        { label: "Dark", value: "dark", icon: <Moon size={15} /> }
-      ]}
-    />
+    <button
+      type="button"
+      className="td-theme-toggle"
+      aria-label={`Switch to ${nextTheme} mode`}
+      title={`Switch to ${nextTheme} mode`}
+      onClick={() => onChange(nextTheme)}
+    >
+      <span className={clsx("td-theme-option", value === "light" && "is-active")} aria-hidden="true">
+        <Sun size={15} />
+      </span>
+      <span className={clsx("td-theme-option", value === "dark" && "is-active")} aria-hidden="true">
+        <Moon size={15} />
+      </span>
+    </button>
   );
 }
 

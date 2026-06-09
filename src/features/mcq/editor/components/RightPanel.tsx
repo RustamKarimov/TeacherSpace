@@ -67,7 +67,7 @@ export function RightPanel({
         </button>
       </div>
 
-      <div className="mcq-panel-body">
+      <div className="mcq-panel-body" key={activeTab}>
         {activeTab === "inspector" && selectedBlock?.type === "text" ? (
           <TextBlockInspector block={selectedBlock} onUpdate={(updater) => onUpdateTextBlock(selectedBlock.id, updater)} />
         ) : null}

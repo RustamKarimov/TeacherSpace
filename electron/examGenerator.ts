@@ -167,11 +167,11 @@ function renderAnswerKeyHtml(payload: McqExamGeneratorPayload, plan: VariantPlan
   const rows = plan.questions
     .map(
       (question, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${escapeHtml(question.examCode)} #${escapeHtml(question.originalQuestionNumber)}</td>
-          <td>${escapeHtml(question.generatedCorrectAnswer || question.correctAnswer || "-")}</td>
-        </tr>`
+        <div class="answer-key-row">
+          <span>${index + 1}</span>
+          <span>${escapeHtml(question.examCode)} #${escapeHtml(question.originalQuestionNumber)}</span>
+          <span>${escapeHtml(question.generatedCorrectAnswer || question.correctAnswer || "-")}</span>
+        </div>`
     )
     .join("");
 
@@ -179,13 +179,15 @@ function renderAnswerKeyHtml(payload: McqExamGeneratorPayload, plan: VariantPlan
     payload,
     plan.label,
     "Answer key",
-    `<main class="answer-key">
+    `<section class="answer-key-heading">
       <h1>${escapeHtml(payload.title)} - Answer Key - Variant ${escapeHtml(plan.label)}</h1>
-      <table>
-        <thead><tr><th>No.</th><th>Source</th><th>Answer</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </main>`
+    </section>
+    <div class="answer-key-row answer-key-header">
+      <span>No.</span>
+      <span>Source</span>
+      <span>Answer</span>
+    </div>
+    ${rows}`
   );
 }
 
@@ -352,10 +354,25 @@ function renderPrintCss(payload: McqExamGeneratorPayload) {
     .option-content.valign-bottom { justify-content: flex-end; }
     .option.is-correct { background: #eef8f4; box-shadow: inset 0 0 0 0.45pt #bde7d8; border-radius: 3px; padding: 1.5px 3px; }
     .option img { display: block; }
-    .answer-key { padding-top: 14mm; }
-    .answer-key h1 { font-size: 16pt; margin: 0 0 8mm; }
-    .answer-key table { width: 100%; border-collapse: collapse; }
-    .answer-key th, .answer-key td { border: 0.45pt solid #111; padding: 2mm; text-align: left; }
+    .answer-key-heading { padding-top: 8mm; break-inside: avoid; }
+    .answer-key-heading h1 { font-size: 16pt; margin: 0 0 6mm; }
+    .answer-key-row {
+      display: grid;
+      grid-template-columns: 18mm minmax(0, 1fr) 24mm;
+      min-height: 7.2mm;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .answer-key-row span {
+      border: 0.45pt solid #111;
+      border-left: 0;
+      border-top: 0;
+      padding: 1.8mm 2mm;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+    .answer-key-row span:first-child { border-left: 0.45pt solid #111; }
+    .answer-key-header { font-weight: 700; border-top: 0.45pt solid #111; }
     .katex { font-size: 1em; }
     .equation-block .katex,
     .text-block .katex,
@@ -432,7 +449,7 @@ function renderPaginationScript() {
         pageContent(coverPage).appendChild(cover);
       }
 
-      const questions = Array.from(source.querySelectorAll(".exam-paper > .question, .answer-key"));
+      const questions = Array.from(source.querySelectorAll(".exam-paper > .question, .answer-key-heading, .answer-key-row"));
       let page = createPage();
       for (const question of questions) {
         let content = pageContent(page);

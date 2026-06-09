@@ -1192,6 +1192,36 @@ button {
   color: #0f172a;
 }
 
+.td-windowbar-actions .td-theme-toggle {
+  width: 62px;
+  height: 30px;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface-soft);
+}
+
+.td-windowbar-actions .td-theme-toggle:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.td-theme-option {
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+}
+
+.td-theme-option.is-active {
+  color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.14);
+}
+
 .dashboard-page {
   height: calc(100vh - 42px);
   min-height: 0;
@@ -2643,6 +2673,7 @@ button {
   min-height: 0;
   padding: 10px 12px;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .mcq-inspector,
@@ -3271,29 +3302,6 @@ button {
 .mcq-option-source-row button:disabled {
   color: #a6b1c0;
   background: #f8fafc;
-}
-
-.mcq-option-thumb {
-  width: 34px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border: 1px dashed #c6d2df;
-  border-radius: 5px;
-  color: #64748b;
-  background: #f8fafc;
-  overflow: hidden;
-}
-
-.mcq-option-thumb.has-image {
-  border-style: solid;
-  background: #fff;
-}
-
-.mcq-option-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .mcq-selected-option-image {
