@@ -141,9 +141,12 @@ button {
 
 .td-gallery {
   width: min(1480px, 100%);
+  height: calc(100vh - 42px);
+  overflow: auto;
   margin: 0 auto;
   padding: 22px;
   display: grid;
+  align-content: start;
   gap: 18px;
 }
 
@@ -259,7 +262,9 @@ button {
 .td-component-stage {
   min-height: 178px;
   display: grid;
-  align-content: center;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  align-items: start;
   gap: 16px;
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -999,7 +1004,8 @@ button {
   .td-showcase-grid,
   .td-form-showcase,
   .td-preview-grid,
-  .td-component-split {
+  .td-component-split,
+  .td-component-stage {
     grid-template-columns: 1fr;
   }
 
@@ -10969,6 +10975,10 @@ html[data-theme="dark"] :is(
   .structured-generator-card,
   .structured-generator-modes,
   .structured-generator-modes button,
+  .structured-splitter-toolbar,
+  .structured-process-bar,
+  .structured-search,
+  .structured-search input,
   .structured-generator-check,
   .structured-generator-warnings,
   .structured-generator-actions,
@@ -11044,6 +11054,9 @@ html[data-theme="dark"] :is(
   .structured-generator-card select,
   .structured-generator-card textarea,
   .structured-generator-card button,
+  .structured-splitter-toolbar button,
+  .structured-process-bar button,
+  .structured-path-field button,
   .settings-page button,
   .settings-page input
 ) {
@@ -11066,7 +11079,8 @@ html[data-theme="dark"] :is(
   .mcq-generator-copy-toggle button.is-active,
   .mcq-generator-row-logic button.is-active,
   .structured-generator-modes button.is-active,
-  .structured-generator-card button.is-active
+  .structured-generator-card button.is-active,
+  .structured-splitter-toolbar button.is-primary
 ) {
   color: #ffffff !important;
   background: color-mix(in srgb, var(--accent) 78%, #000) !important;
@@ -11098,6 +11112,8 @@ html[data-theme="dark"] :is(
   .analysis-performance-row small,
   .structured-generator-card p,
   .structured-generator-card span,
+  .structured-process-main em,
+  .structured-empty-panel span,
   .settings-card span,
   .settings-card small
 ) {
@@ -11124,6 +11140,8 @@ html[data-theme="dark"] :is(
   .analysis-report-metric strong,
   .analysis-performance-row strong,
   .structured-generator-card strong,
+  .structured-process-main > span,
+  .structured-empty-panel strong,
   .settings-card strong
 ) {
   color: var(--text) !important;
@@ -11174,6 +11192,82 @@ html[data-theme="dark"] :is(
   background: color-mix(in srgb, var(--surface-soft) 76%, #000) !important;
   border-color: color-mix(in srgb, var(--border) 72%, #000) !important;
   opacity: 0.72;
+}
+
+html[data-theme="dark"] :is(
+  .structured-splitter-toolbar b,
+  .analysis-report-summary-icon,
+  .analysis-overview-card > span,
+  .analysis-stat-card > span,
+  .snippet-row span
+) {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] :is(
+  .structured-progress-line,
+  .analysis-distribution-row div,
+  .analysis-bar-value
+) {
+  background: color-mix(in srgb, var(--surface-soft) 82%, #000) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-distribution-row i,
+  .analysis-bar-value i,
+  .analysis-trend-line i,
+  .structured-progress-line i
+) {
+  background: var(--accent) !important;
+}
+
+html[data-theme="dark"] .analysis-trend-line {
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  background:
+    linear-gradient(color-mix(in srgb, var(--border) 42%, transparent) 1px, transparent 1px),
+    var(--surface-soft) !important;
+  background-size: 100% 24px !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-result-grid .analysis-student-cell,
+  .analysis-result-grid .analysis-variant-cell,
+  .analysis-result-grid thead th:first-child
+) {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] :is(
+  .analysis-report-pill,
+  .structured-generator-snippets span
+) {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] .analysis-report-pill.is-good {
+  color: var(--success) !important;
+  background: var(--success-soft) !important;
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] .analysis-report-pill.is-warning {
+  color: var(--warning) !important;
+  background: var(--warning-soft) !important;
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--border)) !important;
+}
+
+html[data-theme="dark"] .analysis-report-pill.is-danger {
+  color: var(--danger) !important;
+  background: var(--danger-soft) !important;
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--border)) !important;
 }
 
 html[data-theme="dark"] :is(

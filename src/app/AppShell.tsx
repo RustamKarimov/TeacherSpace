@@ -19,7 +19,7 @@ import {
   Users
 } from "lucide-react";
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ThemeMode } from "../types";
 import { ThemeToggle } from "../components/ui";
@@ -39,6 +39,16 @@ export function AppShell({ activeItem, children, title = "Dashboard", theme, onN
   const [isStructuredOpen, setIsStructuredOpen] = useState(true);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(true);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+    workspace.scrollTop = 0;
+    workspace.querySelectorAll<HTMLElement>("main, .mcq-panel-body, .structured-bank-preview, .metadata-table-card, .metadata-detail-panel").forEach((element) => {
+      element.scrollTop = 0;
+    });
+  }, [activeItem]);
 
   return (
     <div className={clsx("td-workbench", isCollapsed && "is-nav-collapsed")}>
@@ -198,7 +208,7 @@ export function AppShell({ activeItem, children, title = "Dashboard", theme, onN
         </div>
       </aside>
 
-      <section className="td-workspace">
+      <section className="td-workspace" ref={workspaceRef}>
         <header className="td-windowbar">
           <h1>{title}</h1>
           <div className="td-windowbar-actions">
