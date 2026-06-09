@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import initSqlJs from "sql.js";
-import { runMigrations, saveGeneratedExamRecord } from "../electron/database";
+import { getAnalysisOverview, runMigrations, saveGeneratedExamRecord } from "../electron/database";
 import { parseExamCode } from "../src/lib/examCode";
 import { toWorkspaceRelative } from "../src/lib/workspacePaths";
 import { selectQuestionsForMode } from "../src/features/mcq/generator/generatorLogic";
@@ -139,6 +139,54 @@ describe("database migrations", () => {
     expect(examRows).toEqual([["AS Physics MCQ Practice", "full-paper", "mcq", outputFolder]]);
     expect(JSON.parse(String(variantRows[0][1]))).toEqual({ "1": "D" });
     expect(String(variantRows[0][2])).toContain("student_A.pdf");
+  });
+
+  it("summarizes generated exam usage in the analysis overview", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "teacherdesk-analysis-overview-"));
+    const databasePath = path.join(tempDir, "teacherdesk.sqlite");
+    const outputFolder = path.join(tempDir, "AS Physics MCQ Practice");
+    fs.mkdirSync(outputFolder, { recursive: true });
+
+    await runMigrations(databasePath);
+
+    const SQL = await initSqlJs();
+    const db = new SQL.Database(fs.readFileSync(databasePath));
+    const now = "2026-06-04T10:00:00.000Z";
+    db.run(
+      `INSERT INTO mcq_questions (
+        id, exam_code, original_question_number, syllabus, session, year, paper, paper_version,
+        marks, difficulty, review_status, correct_answer, searchable_text, question_json, renderer_version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      ["q1", "9702_w25_qp_11", "1", "9702", "Oct/Nov", 2025, "Paper 1", "1", 1, "Medium", "Ready", "A", "", "{\"blocks\":[]}", 1, now, now]
+    );
+    db.run(
+      `INSERT INTO mcq_questions (
+        id, exam_code, original_question_number, syllabus, session, year, paper, paper_version,
+        marks, difficulty, review_status, correct_answer, searchable_text, question_json, renderer_version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      ["q2", "9702_w25_qp_11", "2", "9702", "Oct/Nov", 2025, "Paper 1", "1", 1, "Difficult", "Needs review", "B", "", "{\"blocks\":[]}", 1, now, now]
+    );
+    fs.writeFileSync(databasePath, Buffer.from(db.export()));
+    db.close();
+
+    await saveGeneratedExamRecord(databasePath, "mcq", outputFolder, {
+      title: "AS Physics MCQ Practice",
+      mode: "full-paper",
+      createdAt: now,
+      variants: [{ label: "A", questions: [{ id: "q1", number: 1, answer: "A" }] }]
+    });
+
+    const overview = await getAnalysisOverview(databasePath);
+    expect(overview.generatedExams?.mcq).toBe(1);
+    expect(overview.usage).toMatchObject({ mcqUsed: 1, mcqUnused: 1 });
+    expect(overview.difficultyDistribution).toEqual(expect.arrayContaining([
+      { difficulty: "Medium", count: 1 },
+      { difficulty: "Difficult", count: 1 }
+    ]));
+    expect(overview.reviewDistribution).toEqual(expect.arrayContaining([
+      { status: "Ready", mcqCount: 1, structuredCount: 0 },
+      { status: "Needs review", mcqCount: 1, structuredCount: 0 }
+    ]));
   });
 });
 

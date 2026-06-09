@@ -1,4 +1,4 @@
-import { CheckCircle2, ClipboardCheck, Plus, Save, Search, Trash2, Users } from "lucide-react";
+import { BarChart3, CheckCircle2, ClipboardCheck, FileText, Plus, Save, Search, Tags, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { teacherDeskApi } from "../../lib/rendererApi";
@@ -140,10 +140,21 @@ export function AnalysisPage({ mode, settings }: Props) {
 }
 
 function OverviewPanel({ overview }: { overview: AnalysisOverview | null }) {
+  const topicStats = overview?.topicStats ?? [];
+  const tagStats = overview?.tagStats ?? [];
+  const topTopics = topicStats.slice(0, 6);
+  const topTags = tagStats.slice(0, 6);
+  const totalGenerated = (overview?.generatedExams?.mcq ?? 0) + (overview?.generatedExams?.structured ?? 0);
+  const totalUsed = (overview?.usage?.mcqUsed ?? 0) + (overview?.usage?.structuredUsed ?? 0);
+  const totalUnused = (overview?.usage?.mcqUnused ?? 0) + (overview?.usage?.structuredUnused ?? 0);
   const cards = [
     { label: "Active students", value: overview?.students.active ?? 0, detail: `${overview?.students.classes ?? 0} classes`, icon: <Users size={17} /> },
     { label: "MCQ questions", value: overview?.questions.mcq ?? 0, detail: `${overview?.results.mcqAttempts ?? 0} marked attempts`, icon: <ClipboardCheck size={17} /> },
     { label: "Structured questions", value: overview?.questions.structured ?? 0, detail: `${overview?.results.structuredAttempts ?? 0} marked attempts`, icon: <CheckCircle2 size={17} /> },
+    { label: "Generated exams", value: totalGenerated, detail: `${overview?.generatedExams?.mcq ?? 0} MCQ, ${overview?.generatedExams?.structured ?? 0} structured`, icon: <FileText size={17} /> },
+    { label: "Questions used", value: totalUsed, detail: `${totalUnused} not used yet`, icon: <BarChart3 size={17} /> },
+    { label: "Topics", value: topicStats.length, detail: "Shared MCQ + structured list", icon: <Tags size={17} /> },
+    { label: "Tags", value: tagStats.length, detail: "Reusable across question banks", icon: <Tags size={17} /> },
     { label: "Archived students", value: overview?.students.archived ?? 0, detail: "Kept for history", icon: <Users size={17} /> }
   ];
 
@@ -160,14 +171,71 @@ function OverviewPanel({ overview }: { overview: AnalysisOverview | null }) {
         </section>
       ))}
       <section className="analysis-wide-card">
-        <h3>Next workflow</h3>
-        <div className="analysis-workflow">
-          <span>1. Add students</span>
-          <span>2. Select generated exam</span>
-          <span>3. Capture answers or marks</span>
-          <span>4. Recalculate difficulty and topic performance</span>
+        <h3>Question bank health</h3>
+        <div className="analysis-overview-split">
+          <MiniDistribution title="MCQ difficulty" rows={(overview?.difficultyDistribution ?? []).map((item) => ({ label: item.difficulty, value: item.count }))} />
+          <MiniDistribution title="Review status" rows={(overview?.reviewDistribution ?? []).map((item) => ({ label: item.status, value: item.mcqCount + item.structuredCount, detail: `${item.mcqCount} MCQ, ${item.structuredCount} structured` }))} />
         </div>
       </section>
+      <section className="analysis-wide-card">
+        <h3>Most populated topics</h3>
+        <TermOverviewList rows={topTopics} />
+      </section>
+      <section className="analysis-wide-card">
+        <h3>Most populated tags</h3>
+        <TermOverviewList rows={topTags} />
+      </section>
+      <section className="analysis-wide-card">
+        <h3>Next workflow</h3>
+        <div className="analysis-workflow">
+          <span>1. Add students and classes</span>
+          <span>2. Generate or select an exam</span>
+          <span>3. Capture MCQ answers or structured marks</span>
+          <span>4. Use topic, tag, question, and student reports</span>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function MiniDistribution({ rows, title }: { rows: Array<{ label: string; value: number; detail?: string }>; title: string }) {
+  const total = Math.max(1, rows.reduce((sum, row) => sum + row.value, 0));
+  return (
+    <div className="analysis-mini-distribution">
+      <strong>{title}</strong>
+      {rows.length === 0 ? <span>No data yet.</span> : rows.map((row) => (
+        <div className="analysis-mini-distribution-row" key={row.label}>
+          <span>{row.label}</span>
+          <div><i style={{ width: `${Math.max(6, Math.round((row.value / total) * 100))}%` }} /></div>
+          <em>{row.value}</em>
+          {row.detail ? <small>{row.detail}</small> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TermOverviewList({
+  rows
+}: {
+  rows: NonNullable<AnalysisOverview["topicStats"]>;
+}) {
+  return (
+    <div className="analysis-term-overview-list">
+      {rows.length === 0 ? <span>No terms recorded yet.</span> : rows.map((row) => (
+        <article key={row.id}>
+          <div>
+            <strong>{row.name}</strong>
+            <span>{row.mcqCount} MCQ, {row.structuredCount} structured</span>
+          </div>
+          <div className="analysis-term-overview-metrics">
+            <span>{row.usedCount} used</span>
+            <span>{row.unusedCount} unused</span>
+            <span>{row.attemptsCount} attempts</span>
+            <span>{row.successPercent === null ? "No results" : `${Math.round(row.successPercent)}% success`}</span>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }

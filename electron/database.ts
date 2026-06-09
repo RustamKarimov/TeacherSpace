@@ -285,6 +285,7 @@ export async function getAnalysisOverview(databasePath: string): Promise<Analysi
   const db = await openDatabase(databasePath);
   try {
     const scalar = (sql: string) => Number(db.exec(sql)[0]?.values[0]?.[0] ?? 0);
+    const usage = readGeneratedQuestionUsage(db);
     return {
       students: {
         active: scalar("SELECT COUNT(*) FROM analysis_students WHERE status = 'Active';"),
@@ -298,11 +299,159 @@ export async function getAnalysisOverview(databasePath: string): Promise<Analysi
       results: {
         mcqAttempts: scalar("SELECT COUNT(*) FROM analysis_mcq_attempts;"),
         structuredAttempts: scalar("SELECT COUNT(*) FROM analysis_structured_attempts;")
-      }
+      },
+      generatedExams: {
+        mcq: scalar("SELECT COUNT(*) FROM generated_exams WHERE source_type = 'mcq';"),
+        structured: scalar("SELECT COUNT(*) FROM generated_exams WHERE source_type = 'structured';")
+      },
+      usage: {
+        mcqUsed: usage.mcq.size,
+        mcqUnused: Math.max(0, scalar("SELECT COUNT(*) FROM mcq_questions;") - usage.mcq.size),
+        structuredUsed: usage.structured.size,
+        structuredUnused: Math.max(0, scalar("SELECT COUNT(*) FROM structured_questions;") - usage.structured.size)
+      },
+      difficultyDistribution: readDifficultyDistribution(db),
+      reviewDistribution: readReviewDistribution(db),
+      topicStats: readAnalysisTermStats(db, "topic", usage),
+      tagStats: readAnalysisTermStats(db, "tag", usage)
     };
   } finally {
     db.close();
   }
+}
+
+function readGeneratedQuestionUsage(db: Database) {
+  const usage = {
+    mcq: new Set<string>(),
+    structured: new Set<string>()
+  };
+  const result = db.exec(
+    `SELECT ge.source_type, gev.question_order_json
+     FROM generated_exam_variants gev
+     JOIN generated_exams ge ON ge.id = gev.generated_exam_id;`
+  );
+  for (const row of result[0]?.values ?? []) {
+    const sourceType = String(row[0]) === "structured" ? "structured" : "mcq";
+    try {
+      const questions = JSON.parse(String(row[1] ?? "[]"));
+      if (!Array.isArray(questions)) continue;
+      for (const question of questions) {
+        if (!isRecordLike(question)) continue;
+        const id = String(question.id ?? "").trim();
+        if (id) usage[sourceType].add(id);
+      }
+    } catch {
+      // Ignore malformed old manifests; analysis should stay available.
+    }
+  }
+  return usage;
+}
+
+function readDifficultyDistribution(db: Database) {
+  const result = db.exec(
+    `SELECT difficulty, COUNT(*) AS count
+     FROM mcq_questions
+     GROUP BY difficulty
+     ORDER BY
+      CASE difficulty
+        WHEN 'Very easy' THEN 1
+        WHEN 'Easy' THEN 2
+        WHEN 'Medium' THEN 3
+        WHEN 'Difficult' THEN 4
+        WHEN 'Very difficult' THEN 5
+        ELSE 6
+      END;`
+  );
+  return (result[0]?.values ?? []).map((row) => ({
+    difficulty: String(row[0] ?? "Unknown"),
+    count: Number(row[1] ?? 0)
+  }));
+}
+
+function readReviewDistribution(db: Database) {
+  const statuses = new Map<string, { status: string; mcqCount: number; structuredCount: number }>();
+  for (const [source, table] of [["mcqCount", "mcq_questions"], ["structuredCount", "structured_questions"]] as const) {
+    const result = db.exec(`SELECT review_status, COUNT(*) FROM ${table} GROUP BY review_status;`);
+    for (const row of result[0]?.values ?? []) {
+      const status = String(row[0] ?? "Unknown");
+      const existing = statuses.get(status) ?? { status, mcqCount: 0, structuredCount: 0 };
+      existing[source] = Number(row[1] ?? 0);
+      statuses.set(status, existing);
+    }
+  }
+  return Array.from(statuses.values()).sort((a, b) => (b.mcqCount + b.structuredCount) - (a.mcqCount + a.structuredCount));
+}
+
+function readAnalysisTermStats(db: Database, kind: "topic" | "tag", usage: { mcq: Set<string>; structured: Set<string> }) {
+  const termTable = kind === "topic" ? "mcq_topics" : "mcq_tags";
+  const mcqLinkTable = kind === "topic" ? "mcq_question_topics" : "mcq_question_tags";
+  const structuredLinkTable = kind === "topic" ? "structured_question_topics" : "structured_question_tags";
+  const statsTable = kind === "topic" ? "analysis_topic_stats" : "analysis_tag_stats";
+  const termIdColumn = kind === "topic" ? "topic_id" : "tag_id";
+  const result = db.exec(`SELECT id, name FROM ${termTable} ORDER BY lower(name);`);
+  const rows = (result[0]?.values ?? []).map((row) => ({
+    id: String(row[0] ?? ""),
+    name: String(row[1] ?? "")
+  }));
+
+  const mcqCounts = readLinkCounts(db, mcqLinkTable, termIdColumn);
+  const structuredCounts = readLinkCounts(db, structuredLinkTable, termIdColumn);
+  const mcqUsedCounts = readUsedLinkCounts(db, mcqLinkTable, termIdColumn, usage.mcq);
+  const structuredUsedCounts = readUsedLinkCounts(db, structuredLinkTable, termIdColumn, usage.structured);
+  const statRows = readCombinedTermPerformance(db, statsTable, termIdColumn);
+
+  return rows.map((row) => {
+    const mcqCount = mcqCounts.get(row.id) ?? 0;
+    const structuredCount = structuredCounts.get(row.id) ?? 0;
+    const usedCount = (mcqUsedCounts.get(row.id) ?? 0) + (structuredUsedCounts.get(row.id) ?? 0);
+    const attempts = statRows.get(row.id);
+    return {
+      id: row.id,
+      name: row.name,
+      mcqCount,
+      structuredCount,
+      usedCount,
+      unusedCount: Math.max(0, mcqCount + structuredCount - usedCount),
+      attemptsCount: attempts?.attemptsCount ?? 0,
+      successPercent: attempts?.successPercent ?? null
+    };
+  }).sort((a, b) => (b.mcqCount + b.structuredCount) - (a.mcqCount + a.structuredCount));
+}
+
+function readLinkCounts(db: Database, linkTable: string, termIdColumn: string) {
+  const counts = new Map<string, number>();
+  const result = db.exec(`SELECT ${termIdColumn}, COUNT(*) FROM ${linkTable} GROUP BY ${termIdColumn};`);
+  for (const row of result[0]?.values ?? []) counts.set(String(row[0] ?? ""), Number(row[1] ?? 0));
+  return counts;
+}
+
+function readUsedLinkCounts(db: Database, linkTable: string, termIdColumn: string, usedQuestionIds: Set<string>) {
+  const counts = new Map<string, number>();
+  const result = db.exec(`SELECT question_id, ${termIdColumn} FROM ${linkTable};`);
+  for (const row of result[0]?.values ?? []) {
+    const questionId = String(row[0] ?? "");
+    if (!usedQuestionIds.has(questionId)) continue;
+    const topicId = String(row[1] ?? "");
+    counts.set(topicId, (counts.get(topicId) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function readCombinedTermPerformance(db: Database, statsTable: string, termIdColumn: string) {
+  const stats = new Map<string, { attemptsCount: number; successPercent: number | null }>();
+  const result = db.exec(
+    `SELECT ${termIdColumn}, SUM(attempts_count), AVG(success_percent)
+     FROM ${statsTable}
+     WHERE source_type IN ('mcq', 'structured', 'combined')
+     GROUP BY ${termIdColumn};`
+  );
+  for (const row of result[0]?.values ?? []) {
+    stats.set(String(row[0] ?? ""), {
+      attemptsCount: Number(row[1] ?? 0),
+      successPercent: row[2] === null || row[2] === undefined ? null : Number(row[2])
+    });
+  }
+  return stats;
 }
 
 export async function listAnalysisStudents(databasePath: string): Promise<AnalysisStudentRecord[]> {

@@ -404,6 +404,45 @@ export interface AnalysisOverview {
     mcqAttempts: number;
     structuredAttempts: number;
   };
+  generatedExams?: {
+    mcq: number;
+    structured: number;
+  };
+  usage?: {
+    mcqUsed: number;
+    mcqUnused: number;
+    structuredUsed: number;
+    structuredUnused: number;
+  };
+  difficultyDistribution?: Array<{
+    difficulty: string;
+    count: number;
+  }>;
+  reviewDistribution?: Array<{
+    status: string;
+    mcqCount: number;
+    structuredCount: number;
+  }>;
+  topicStats?: Array<{
+    id: string;
+    name: string;
+    mcqCount: number;
+    structuredCount: number;
+    usedCount: number;
+    unusedCount: number;
+    attemptsCount: number;
+    successPercent: number | null;
+  }>;
+  tagStats?: Array<{
+    id: string;
+    name: string;
+    mcqCount: number;
+    structuredCount: number;
+    usedCount: number;
+    unusedCount: number;
+    attemptsCount: number;
+    successPercent: number | null;
+  }>;
 }
 
 export interface ImportExportResult {

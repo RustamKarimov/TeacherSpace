@@ -185,14 +185,23 @@ const fallbackApi: TeacherDeskApi = {
   },
   async getAnalysisOverview() {
     const students = readFallbackStudents();
+    const questions = readFallbackQuestions();
+    const topicStats = buildFallbackTermStats(questions, "topics");
+    const tagStats = buildFallbackTermStats(questions, "tags");
     return {
       students: {
         active: students.filter((student) => student.status === "Active").length,
         archived: students.filter((student) => student.status === "Archived").length,
         classes: new Set(students.filter((student) => student.status === "Active").map((student) => `${student.academicYear}:${student.grade}:${student.className}`)).size
       },
-      questions: { mcq: readFallbackQuestions().length, structured: 0 },
-      results: { mcqAttempts: 0, structuredAttempts: 0 }
+      questions: { mcq: questions.length, structured: 0 },
+      results: { mcqAttempts: 0, structuredAttempts: 0 },
+      generatedExams: { mcq: 0, structured: 0 },
+      usage: { mcqUsed: 0, mcqUnused: questions.length, structuredUsed: 0, structuredUnused: 0 },
+      difficultyDistribution: Object.entries(countBy(questions.map((question) => question.difficulty || "Medium"))).map(([difficulty, count]) => ({ difficulty, count })),
+      reviewDistribution: Object.entries(countBy(questions.map((question) => question.reviewStatus || "Ready"))).map(([status, mcqCount]) => ({ status, mcqCount, structuredCount: 0 })),
+      topicStats,
+      tagStats
     };
   },
   async listAnalysisStudents() {
@@ -256,4 +265,32 @@ function readFallbackStudents(): AnalysisStudentRecord[] {
 
 function writeFallbackQuestions(questions: McqQuestionRecord[]) {
   localStorage.setItem("teacherdesk.mcqQuestions", JSON.stringify(questions));
+}
+
+function countBy(values: string[]) {
+  return values.reduce<Record<string, number>>((counts, value) => {
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function buildFallbackTermStats(questions: McqQuestionRecord[], key: "topics" | "tags") {
+  const counts = new Map<string, number>();
+  for (const question of questions) {
+    for (const name of question[key] ?? []) {
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .map(([name, count]) => ({
+      id: name,
+      name,
+      mcqCount: count,
+      structuredCount: 0,
+      usedCount: 0,
+      unusedCount: count,
+      attemptsCount: 0,
+      successPercent: null
+    }))
+    .sort((a, b) => b.mcqCount - a.mcqCount);
 }
