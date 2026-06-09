@@ -10,7 +10,6 @@ import {
   Check,
   Clipboard,
   Columns3,
-  Eye,
   Image as ImageIcon,
   Italic,
   List,
@@ -32,7 +31,7 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import type { Alignment, McqOption, OptionLabelPosition, OptionLayout, OptionTypographySettings, OptionsBlock, TableBlock, TableCell, VerticalAlignment } from "../types";
 import { defaultOptionsSettings, optionTextPlaceholders } from "../optionsBlockDefaults";
-import { OptionsPreview, alignToFlex, cropToClipPath, cropToObjectPosition } from "./OptionsPreview";
+import { alignToFlex, cropToClipPath, cropToObjectPosition } from "./OptionsPreview";
 import { createTableCell } from "../tableBlockDefaults";
 import { TableWithLatex } from "../table/TableWithLatex";
 import { BorderButton, borderModes, TableToolbar } from "../table/TableBlockInspector";
@@ -301,6 +300,20 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
       ...current,
       options: current.options.map((option) => (option.id === optionId ? { ...option, text: "", image: undefined, contentType: "text" } : option))
     }));
+  }
+
+  function focusAdjacentOption(optionId: string, direction: 1 | -1) {
+    const currentIndex = block.options.findIndex((option) => option.id === optionId);
+    if (currentIndex < 0) return;
+    const nextOption = block.options[currentIndex + direction];
+    if (!nextOption) return;
+    setSelectedOption(nextOption.id);
+    requestAnimationFrame(() => {
+      const textarea = optionRefs.current[nextOption.id];
+      if (!textarea) return;
+      textarea.focus();
+      textarea.select();
+    });
   }
 
   function updateSelectedImage(patch: Partial<NonNullable<McqOption["image"]>>) {
@@ -618,6 +631,11 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
                 placeholder={optionTextPlaceholders[option.letter]}
                 value={option.text}
                 onChange={(event) => updateOption(option.id, event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Tab") return;
+                  event.preventDefault();
+                  focusAdjacentOption(option.id, event.shiftKey ? -1 : 1);
+                }}
               />
               <button
                 aria-label={`Edit LaTeX for option ${option.letter}`}
@@ -840,19 +858,9 @@ export function OptionsBlockInspector({ block, onUpdate }: OptionsBlockInspector
         </label>
       </InspectorSection>
 
-      <InspectorSection title="Validation" icon={<Eye size={15} />}>
+      <InspectorSection title="Validation" icon={<Check size={15} />}>
         <div className={hasEmptyOption ? "mcq-validation-warning" : "mcq-validation-ok"}>
           {hasEmptyOption ? "Every option needs content." : "Options block is valid."}
-        </div>
-      </InspectorSection>
-
-      <InspectorSection title="Preview (student view)" icon={<Eye size={15} />}>
-        <div className="mcq-inspector-preview mcq-options-mini-preview">
-          <strong>1</strong>
-          <div>
-            <p>The table shows values of speed and tension for a rotating mass.</p>
-            <OptionsPreview block={block} student />
-          </div>
         </div>
       </InspectorSection>
     </div>

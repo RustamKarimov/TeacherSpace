@@ -1157,8 +1157,9 @@ button {
   align-items: center;
   justify-content: space-between;
   padding: 0 22px;
-  background: #fff;
-  border-bottom: 1px solid #d7dee8;
+  color: var(--text);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .td-windowbar h1 {
@@ -1188,8 +1189,8 @@ button {
 }
 
 .td-windowbar-actions button:hover {
-  background: #eef3f8;
-  color: #0f172a;
+  background: var(--surface-soft);
+  color: var(--text);
 }
 
 .td-windowbar-actions .td-theme-toggle {
@@ -4057,12 +4058,15 @@ button {
 }
 
 .mcq-statusbar {
-  height: 42px;
+  height: 36px;
   display: grid;
   grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 0.9fr) minmax(160px, 0.8fr) minmax(130px, 0.6fr) minmax(200px, 0.9fr) 48px;
   align-items: center;
-  background: #fff;
-  border-top: 1px solid #cfd8e3;
+  color: var(--text);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  line-height: 1.15;
 }
 
 .mcq-statusbar > div {
@@ -4070,10 +4074,10 @@ button {
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 0 18px;
-  border-right: 1px solid #cfd8e3;
-  color: #334155;
+  gap: 7px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
 }
 
 .mcq-statusbar strong {
@@ -4081,11 +4085,14 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
+  color: var(--text);
+  font-weight: 650;
 }
 
 .mcq-statusbar svg {
-  color: #0b2233;
+  width: 15px;
+  height: 15px;
+  color: var(--text);
   flex: none;
 }
 

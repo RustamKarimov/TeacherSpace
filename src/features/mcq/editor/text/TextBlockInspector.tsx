@@ -5,7 +5,6 @@ import {
   Baseline,
   Bold,
   CaseSensitive,
-  Eye,
   Italic,
   List,
   ListOrdered,
@@ -21,7 +20,6 @@ import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Alignment, TextBlock } from "../types";
 import { textBlockPlaceholder } from "../textBlockDefaults";
-import { TextWithInlineLatex } from "./TextWithInlineLatex";
 
 const fonts = ["Calibri", "Arial", "Times New Roman", "Cambria", "Segoe UI"];
 const listStyles = [
@@ -350,7 +348,7 @@ export function TextBlockInspector({ block, onUpdate }: TextBlockInspectorProps)
         </div>
       </InspectorSection>
 
-      <InspectorSection title="Print behavior" icon={<Eye size={15} />}>
+      <InspectorSection title="Print behavior" icon={<Pilcrow size={15} />}>
         <div className="mcq-print-row">
           <label className="mcq-check-row">
             <input checked={block.settings.keepWithNext} type="checkbox" onChange={(event) => updateSettings("keepWithNext", event.target.checked)} />
@@ -367,24 +365,8 @@ export function TextBlockInspector({ block, onUpdate }: TextBlockInspectorProps)
         </div>
       </InspectorSection>
 
-      <InspectorSection title="Validation" icon={<Eye size={15} />}>
+      <InspectorSection title="Validation" icon={<Pilcrow size={15} />}>
         <div className="mcq-validation-ok">Text block is valid.</div>
-      </InspectorSection>
-
-      <InspectorSection title="Preview (student view)" icon={<Eye size={15} />}>
-        <div className="mcq-inspector-preview">
-          <strong>1</strong>
-          <div
-            style={{
-              fontFamily: block.settings.fontFamily,
-              fontSize: `${block.settings.fontSize}pt`,
-              lineHeight: block.settings.lineHeight,
-              textAlign: block.settings.alignment
-            }}
-          >
-            <TextWithInlineLatex block={block.text.trim() ? block : { ...block, text: textBlockPlaceholder }} />
-          </div>
-        </div>
       </InspectorSection>
     </div>
   );

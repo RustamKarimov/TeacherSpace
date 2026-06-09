@@ -47,6 +47,10 @@ export function App() {
     void boot();
   }, []);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   async function updateTheme(nextTheme: ThemeMode) {
     setTheme(nextTheme);
     if (settings) {
