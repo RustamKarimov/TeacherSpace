@@ -1,7 +1,7 @@
 :root {
   font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #182230;
-  background: #f4f7fb;
+  color: var(--text, #182230);
+  background: var(--page-bg, #f4f7fb);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -14,6 +14,8 @@ body {
   margin: 0;
   min-width: 1040px;
   overflow: hidden;
+  color: var(--text);
+  background: var(--page-bg);
 }
 
 button,
@@ -9786,4 +9788,545 @@ button {
   color: #0f172a;
   font-size: 12px;
   font-weight: 750;
+}
+
+/* Application-wide dark theme layer.
+   Paper/PDF surfaces intentionally stay white so previews match printed output. */
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  color: var(--text);
+  background: var(--page-bg);
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] ::selection {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--accent) 72%, #000);
+}
+
+html[data-theme="dark"] :is(
+  .td-workspace,
+  .td-page-loading,
+  .dashboard-page,
+  .import-export-page,
+  .mcq-editor-page,
+  .mcq-bank-page,
+  .mcq-generator-page,
+  .analysis-page,
+  .analysis-report-page,
+  .structured-splitter-page,
+  .structured-bank-page,
+  .structured-generator-page,
+  .structured-metadata-page,
+  .metadata-page,
+  .settings-page
+) {
+  color: var(--text);
+  background: var(--page-bg);
+}
+
+html[data-theme="dark"] :is(
+  .td-windowbar,
+  .td-topbar,
+  .td-panel,
+  .td-card,
+  .td-modal,
+  .td-inspector-card,
+  .td-import-card,
+  .dashboard-hero,
+  .dashboard-stat-card,
+  .dashboard-workflow-card,
+  .dashboard-system,
+  .import-export-intro,
+  .import-export-card,
+  .import-export-result,
+  .import-export-rules,
+  .mcq-toolbar,
+  .mcq-block-card,
+  .mcq-right-panel,
+  .mcq-panel-tabs,
+  .mcq-panel-tabs button,
+  .mcq-inspector-header,
+  .mcq-inspector-section,
+  .mcq-metadata-header,
+  .mcq-bank-toolbar,
+  .mcq-bank-list-header,
+  .mcq-bank-pagination,
+  .mcq-bank-table,
+  .mcq-bank-preview,
+  .mcq-bank-preview > header,
+  .mcq-bank-meta-card,
+  .mcq-bank-metadata-dialog,
+  .mcq-bank-confirm-dialog,
+  .mcq-bank-preview-footer,
+  .mcq-generator-mode-tabs,
+  .mcq-generator-card,
+  .mcq-generator-side-panel,
+  .mcq-generator-process,
+  .analysis-panel,
+  .analysis-stat-card,
+  .analysis-wide-card,
+  .analysis-report-sidebar,
+  .analysis-report-main,
+  .analysis-report-summary,
+  .analysis-report-section,
+  .analysis-question-preview-card,
+  .analysis-selector-list button,
+  .structured-card,
+  .structured-table-card,
+  .structured-bank-toolbar,
+  .structured-bank-filters,
+  .structured-bank-table-card,
+  .structured-bank-preview,
+  .structured-generator-card,
+  .structured-generator-side,
+  .structured-metadata-card,
+  .metadata-card,
+  .settings-card,
+  .td-app-notice
+) {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] :is(
+  .td-component-swatch,
+  .td-component-token,
+  .td-status-board,
+  .td-callout,
+  .td-mini-window,
+  .td-mini-window header,
+  .dashboard-stat-icon,
+  .dashboard-workflow-card > span,
+  .import-export-summary span,
+  .mcq-block-type-icon,
+  .mcq-block-card.is-locked,
+  .mcq-bank-filter-panel,
+  .mcq-bank-search,
+  .mcq-bank-filter-options,
+  .mcq-bank-filter-mode,
+  .mcq-bank-filter-mode button,
+  .mcq-bank-meta-grid div,
+  .mcq-bank-token-line strong,
+  .mcq-generator-selection,
+  .mcq-generator-output-files span,
+  .mcq-generator-preview-empty,
+  .analysis-workflow span,
+  .analysis-placeholder-grid div,
+  .analysis-search-field,
+  .analysis-class-menu,
+  .analysis-result-grid-wrap,
+  .structured-path-field > div,
+  .structured-mini-plan,
+  .structured-metric,
+  .structured-callout,
+  .structured-issue,
+  .structured-plan-list article,
+  .structured-filter-menu,
+  .structured-filter-mode button,
+  .structured-bank-search,
+  .structured-bank-basket,
+  .structured-multi-filter > button,
+  .structured-select-filter select,
+  .settings-check
+) {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--surface-soft);
+}
+
+html[data-theme="dark"] :is(
+  input,
+  select,
+  textarea,
+  .td-dropdown-button,
+  .td-dropdown-menu,
+  .td-search,
+  .td-field,
+  .td-button-secondary,
+  .td-icon-button,
+  .mcq-toolbar button,
+  .mcq-block-actions button,
+  .mcq-icon-toggle,
+  .mcq-button-row button,
+  .mcq-lock-pill,
+  .mcq-preview-controls button,
+  .mcq-statusbar button,
+  .mcq-control input,
+  .mcq-control select,
+  .mcq-control textarea,
+  .mcq-control-full textarea,
+  .mcq-segment-row button,
+  .mcq-answer-row button,
+  .mcq-option-source-row,
+  .mcq-option-source-row textarea,
+  .mcq-option-source-row button,
+  .mcq-selected-option-image-actions button,
+  .mcq-option-image-action-row button,
+  .mcq-table-tools-row button,
+  .mcq-table-mode-button,
+  .mcq-border-tool-grid button,
+  .mcq-table-cell-image-tools button,
+  .mcq-bank-toolbar button,
+  .mcq-bank-actions button,
+  .mcq-bank-filter-title button,
+  .mcq-bank-filter-group > button,
+  .mcq-bank-pagination button,
+  .mcq-bank-pagination select,
+  .mcq-bank-preview-actions,
+  .mcq-bank-preview-actions button,
+  .mcq-bank-meta-summary-header button,
+  .mcq-bank-meta-edit-grid input,
+  .mcq-bank-meta-edit-grid select,
+  .mcq-bank-meta-textarea textarea,
+  .mcq-bank-metadata-dialog-actions button,
+  .mcq-bank-preview-footer button,
+  .mcq-bank-confirm-dialog button,
+  .mcq-generator-mode-tabs button,
+  .mcq-generator-add-row,
+  .mcq-generator-topic-picker button,
+  .mcq-generator-folder button,
+  .mcq-generator-preview-action,
+  .mcq-generator-preview-header button,
+  .mcq-generator-copy-toggle button,
+  .analysis-panel header button,
+  .analysis-field input,
+  .analysis-field select,
+  .analysis-field textarea,
+  .analysis-result-grid input,
+  .analysis-result-grid select,
+  .analysis-exam-card-list button,
+  .analysis-class-picker > button,
+  .analysis-class-menu button,
+  .analysis-class-menu label,
+  .structured-splitter-toolbar button,
+  .structured-process-bar button,
+  .structured-path-field button,
+  .structured-bank-toolbar button,
+  .structured-bank-table-card button,
+  .structured-bank-paths button,
+  .structured-filter-clear,
+  .structured-filter-mode button,
+  .structured-generator-form-row input,
+  .structured-generator-form-row select,
+  .structured-generator-card input,
+  .structured-generator-card select,
+  .structured-generator-card textarea,
+  .settings-field input
+) {
+  color: var(--text);
+  border-color: var(--border);
+  background-color: var(--surface-raised);
+}
+
+html[data-theme="dark"] :is(
+  input::placeholder,
+  textarea::placeholder,
+  .td-topbar p,
+  .td-gallery-hero p,
+  .td-card p,
+  .td-callout p,
+  .td-status-board p,
+  .td-import-card p,
+  .td-mini-window p,
+  .dashboard-hero span,
+  .dashboard-stat-card > span:not(.dashboard-stat-icon),
+  .dashboard-info-row span,
+  .dashboard-hero p,
+  .dashboard-stat-card em,
+  .dashboard-workflow-card p,
+  .dashboard-info-row,
+  .import-export-intro span,
+  .import-export-card label span,
+  .import-export-intro p,
+  .import-export-card p,
+  .import-export-rules p,
+  .mcq-block-subtitle,
+  .mcq-block-handle,
+  .mcq-metadata-header span,
+  .mcq-inspector-header span,
+  .mcq-control span,
+  .mcq-mini-label,
+  .mcq-bank-list-header span,
+  .mcq-bank-question-cell span,
+  .mcq-bank-preview > header span,
+  .mcq-bank-meta-grid span,
+  .mcq-bank-token-line > span,
+  .mcq-generator-process span,
+  .analysis-field span,
+  .analysis-panel header span,
+  .analysis-stat-card small,
+  .analysis-table small,
+  .analysis-result-grid small,
+  .analysis-entry-copy,
+  .analysis-exam-card-list span,
+  .analysis-exam-card-list em,
+  .analysis-answer-cell-wrap span,
+  .structured-card header span,
+  .structured-metric span,
+  .structured-callout p,
+  .structured-issue p,
+  .structured-issue span,
+  .structured-issue em,
+  .structured-plan-list span,
+  .structured-plan-list small,
+  .structured-bank-table-card header span,
+  .structured-bank-preview header span
+) {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  strong,
+  .td-windowbar h1,
+  .dashboard-hero h2,
+  .dashboard-stat-card strong,
+  .dashboard-workflow-card h3,
+  .dashboard-info-row strong,
+  .import-export-intro h2,
+  .import-export-card h3,
+  .import-export-rules h3,
+  .import-export-summary strong,
+  .mcq-block-title,
+  .mcq-text-preview,
+  .mcq-text-list-marker,
+  .mcq-inspector-header strong,
+  .mcq-bank-list-header strong,
+  .mcq-bank-question-cell strong,
+  .mcq-bank-preview > header strong,
+  .mcq-bank-meta-grid strong,
+  .mcq-bank-meta-editor-header strong,
+  .mcq-generator-process strong,
+  .analysis-panel h3,
+  .analysis-wide-card h3,
+  .analysis-stat-card strong,
+  .analysis-report-title-row h2,
+  .analysis-placeholder-grid strong,
+  .structured-card header strong,
+  .structured-metric strong,
+  .structured-plan-list strong,
+  .structured-empty-panel strong,
+  .structured-bank-table-card header strong,
+  .structured-bank-preview header strong,
+  .settings-card header strong
+) {
+  color: var(--text);
+}
+
+html[data-theme="dark"] :is(
+  .td-button-primary,
+  .mcq-toolbar .mcq-primary-action,
+  .mcq-bank-toolbar .mcq-bank-primary,
+  .mcq-bank-preview-actions button.is-active,
+  .mcq-generator-generate,
+  .mcq-generator-copy-toggle button.is-active,
+  .analysis-primary-button,
+  .structured-splitter-toolbar button.is-primary,
+  .structured-progress-line i
+) {
+  color: #ffffff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+html[data-theme="dark"] :is(
+  .td-segment.is-active,
+  .td-tabs button.is-active,
+  .td-pagination button.is-active,
+  .td-theme-option.is-active,
+  .mcq-panel-tabs button.is-active,
+  .mcq-icon-toggle.is-active,
+  .mcq-segment-row button.is-active,
+  .mcq-answer-row button.is-active,
+  .mcq-bank-filter-group > button strong,
+  .mcq-bank-filter-mode button.is-active,
+  .mcq-bank-actions button.is-basketed,
+  .mcq-bank-preview-footer button.is-basketed,
+  .structured-tabs button.is-active,
+  .structured-filter-mode button.is-active,
+  .structured-multi-filter > button strong,
+  .structured-bank-basket,
+  .analysis-exam-card-list button.is-active,
+  .analysis-selector-list button.is-active
+) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--accent-soft);
+}
+
+html[data-theme="dark"] :is(
+  table,
+  .td-table,
+  .mcq-bank-table,
+  .analysis-table,
+  .analysis-result-grid,
+  .structured-manifest-table,
+  .structured-bank-table
+) {
+  color: var(--text);
+  background: var(--surface);
+}
+
+html[data-theme="dark"] :is(
+  th,
+  .td-table th,
+  .mcq-bank-table th,
+  .analysis-table th,
+  .analysis-result-grid th,
+  .structured-manifest-table th,
+  .structured-bank-table th,
+  .analysis-result-grid thead th:first-child
+) {
+  color: var(--muted);
+  border-color: var(--border);
+  background: var(--surface-soft);
+}
+
+html[data-theme="dark"] :is(
+  td,
+  .td-table td,
+  .mcq-bank-table td,
+  .analysis-table td,
+  .analysis-result-grid td,
+  .structured-manifest-table td,
+  .structured-bank-table td
+) {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-bank-table tbody tr:hover,
+  .mcq-bank-table tbody tr.is-selected,
+  .analysis-table tbody tr:hover,
+  .structured-bank-table tbody tr:hover,
+  .structured-bank-table tbody tr.is-selected,
+  .structured-manifest-table tbody tr:hover,
+  .mcq-option-source-row.is-selected,
+  .mcq-block-card.is-selected,
+  .analysis-exam-card-list button.is-active,
+  .analysis-selector-list button.is-active
+) {
+  background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
+}
+
+html[data-theme="dark"] :is(
+  .mcq-editor-message.is-success,
+  .mcq-validation-ok,
+  .mcq-metadata-status.is-ok,
+  .mcq-bank-status-icon.is-ready,
+  .structured-callout.is-success,
+  .structured-metric.is-good,
+  .structured-row-status.is-ready
+) {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+  background: var(--success-soft);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-editor-message.is-error,
+  .mcq-generator-error,
+  .mcq-bank-actions button:last-child,
+  .mcq-bank-confirm-dialog button.is-danger,
+  .structured-callout.is-error,
+  .structured-issue.is-error,
+  .structured-bank-toolbar button.structured-danger-button,
+  .structured-icon-danger,
+  .analysis-table td button
+) {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--border));
+  background: var(--danger-soft);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-editor-message.is-info,
+  .td-app-notice,
+  .import-export-result header,
+  .mcq-generator-start-new,
+  .structured-bank-basket
+) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: var(--accent-soft);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-editor-message.is-warning,
+  .mcq-validation-warning,
+  .mcq-metadata-status.is-warning,
+  .mcq-metadata-warning-card,
+  .mcq-generator-title-notice,
+  .import-export-warnings,
+  .structured-issue.is-warning,
+  .structured-manifest-table tbody tr.is-warning
+) {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--border));
+  background: var(--warning-soft);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-a4-page,
+  .mcq-a4-page-shell,
+  .mcq-bank-a4,
+  .mcq-generator-a4-mini,
+  .structured-preview-card iframe,
+  .mcq-generator-preview iframe
+) {
+  color: #111827;
+  background: #ffffff;
+}
+
+html[data-theme="dark"] :is(
+  .mcq-a4-frame,
+  .mcq-bank-a4-frame,
+  .mcq-generator-preview-empty,
+  .structured-preview-empty
+) {
+  background: color-mix(in srgb, var(--page-bg) 70%, #000);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-image-preview-box,
+  .mcq-selected-option-image-preview,
+  .mcq-table-cell-image-preview
+) {
+  border-color: var(--border);
+  background:
+    linear-gradient(45deg, color-mix(in srgb, var(--surface-soft) 82%, #fff) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--surface-soft) 82%, #fff) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--surface-soft) 82%, #fff) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--surface-soft) 82%, #fff) 75%),
+    var(--surface);
+}
+
+html[data-theme="dark"] :is(
+  .mcq-option-preview-row.is-correct,
+  .option.is-correct
+) {
+  background: color-mix(in srgb, var(--success-soft) 74%, transparent);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--surface-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  border: 3px solid var(--surface-soft);
+  border-radius: 999px;
+  background: var(--border-strong);
 }
