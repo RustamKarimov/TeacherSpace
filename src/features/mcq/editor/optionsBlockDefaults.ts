@@ -29,7 +29,7 @@ export const defaultOptionsSettings: OptionsBlockSettings = {
   optionGap: 6,
   alignment: "left",
   verticalAlignment: "middle",
-  label: { ...defaultTypography },
+  label: { ...defaultTypography, bold: true },
   text: { ...defaultTypography },
   math: { ...defaultTypography, italic: false },
   inheritMathFont: true,
