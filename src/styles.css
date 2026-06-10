@@ -11516,3 +11516,39 @@ html[data-theme="dark"] :is(
 ) {
   border-color: #111827 !important;
 }
+
+html[data-theme="dark"] body .analysis-question-preview-card .analysis-question-paper-mini {
+  background: #ffffff !important;
+  border-color: #d5dbe5 !important;
+  box-shadow: inset 0 0 0 1px #eef2f7 !important;
+}
+
+html[data-theme="dark"] body .analysis-question-preview-card .analysis-question-paper-mini,
+html[data-theme="dark"] body .analysis-question-preview-card .analysis-question-paper-mini * {
+  color: #111827 !important;
+}
+
+html[data-theme="dark"] body .analysis-question-preview-card .analysis-question-paper-mini table,
+html[data-theme="dark"] body .analysis-question-preview-card .analysis-question-paper-mini th,
+html[data-theme="dark"] body .analysis-question-preview-card .analysis-question-paper-mini td {
+  border-color: #111827 !important;
+}
+
+html[data-theme="dark"] .mcq-options-card .mcq-options-preview-list,
+html[data-theme="dark"] .mcq-options-card .mcq-option-preview-row,
+html[data-theme="dark"] .mcq-options-card .mcq-option-preview-row p,
+html[data-theme="dark"] .mcq-options-card .mcq-option-preview-row .katex,
+html[data-theme="dark"] .mcq-options-card .mcq-option-preview-row .katex * {
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] .mcq-options-card .mcq-option-preview-row > span {
+  background: var(--button-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] .mcq-options-card .mcq-options-preview-list.is-plain-labels .mcq-option-preview-row > span {
+  background: transparent !important;
+  border-color: transparent !important;
+}
